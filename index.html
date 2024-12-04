@@ -1,4 +1,9 @@
 <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+</head>
+<body>
 <div id="container"></div>
 <script src="d3.js"></script>
 <script type="module">
@@ -7,6 +12,10 @@ const margin = { top: 20, right: 20, bottom: 30, left: 40 };
 const width = 500 - margin.left - margin.right;
 const height = 300 - margin.top - margin.bottom;
 
+const n = 20 // number of layers 
+const m = 200 // number of samples per layer
+const k = 10 // number of bumps per layer
+
 const svg = d3.select('body')
   .append('svg')
   .attr('width', width + margin.left + margin.right)
@@ -14,23 +23,35 @@ const svg = d3.select('body')
   .append('g')
   .attr('transform', `translate(${margin.left}, ${margin.top})`);
 
-d3.csv('data.csv')
+d3.csv('nivo.csv')
   .then(data => {
-    console.log(data);
-
-    // Convert string values to numbers
+    // Convert string values to numbers and extract year from date
     data.forEach(d => {
-      d['Taux de pauvreté'] = +d['Taux de pauvreté'];
-      d['Part de la population éloignée des équipements de proximité'] = +d['Part de la population éloignée des équipements de proximité'];
+      d.ht_neige = +d.ht_neige;
+      d.numer_sta = +d.numer_sta;
+      d.date = d.date.slice(0, 4);
+      d.date = +d.date;
     });
+
+    // Group data by date and station, then find max snow height
+    const groupedData = d3.groups(data, d => d.date, d => d.numer_sta)
+      .map(([date, numer_stas]) => ({
+        date: +date,
+        numer_stas: numer_stas.map(numer_sta => ({
+          numer_sta: numer_sta[0].numer_sta,
+          max_ht_neige: d3.max(numer_sta, d => d.ht_neige)
+        }))
+      }));
+
+    console.log(groupedData);
 
     // Create scales
     const xScale = d3.scaleLinear()
-      .domain([d3.min(data, d => d['Part de la population éloignée des équipements de proximité']), d3.max(data, d => d['Part de la population éloignée des équipements de proximité'])])
+      .domain([d3.min(groupedData, d => d.date), d3.max(groupedData, d => d.date)])
       .range([0, width]);
 
     const yScale = d3.scaleLinear()
-      .domain([d3.min(data, d => d['Taux de pauvreté']), d3.max(data, d => d['Taux de pauvreté'])])
+      .domain([0, d3.max(groupedData.flatMap(d => d.numer_stas), d => d.max_ht_neige)])
       .range([height, 0]);
 
     // Create axes
@@ -43,15 +64,27 @@ d3.csv('data.csv')
 
     // Draw circles
     svg.selectAll('circle')
-      .data(data)
+      .data(groupedData.flatMap(d => d.numer_stas))
       .enter()
       .append('circle')
-      .attr('cx', d => xScale(d['Part de la population éloignée des équipements de proximité']))
-      .attr('cy', d => yScale(d['Taux de pauvreté']))
+      .attr('cx', d => xScale(d.date))
+      .attr('cy', d => yScale(d.max_ht_neige))
       .attr('r', 5);
+
+    // Add station labels
+    svg.selectAll('text')
+      .data(groupedData.flatMap(d => d.numer_stas))
+      .enter()
+      .append('text')
+      .attr('x', d => xScale(d.date))
+      .attr('y', d => yScale(d.max_ht_neige) + 5)
+      .text(d => d.numer_sta);
   })
   .catch(error => {
     console.error('Error loading CSV:', error);
   });
 
+
 </script>
+</body>
+</html>
