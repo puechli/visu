@@ -1,90 +1,148 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
+    <meta charset="UTF-8">
+    <title>CSV to Stacked Area Chart</title>
+    <style>
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: auto;
+            height: auto;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0.9;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
-<div id="container"></div>
-<script src="d3.js"></script>
-<script type="module">
+    <div id="chart"></div>
+    <script>
+        Promise.all([
+            d3.csv("info.csv"),
+            d3.csv("nivo.csv")
+        ]).then(([infoData, nivoData]) => {
+            processData(infoData, nivoData);
+        });
 
-const margin = { top: 20, right: 20, bottom: 30, left: 40 };
-const width = 500 - margin.left - margin.right;
-const height = 300 - margin.top - margin.bottom;
+        function processData(infoData, nivoData) {
+            // Convert nivoData to a lookup map based on numer_sta
+            const nivoMap = {};
+            nivoData.forEach(d => {
+                nivoMap[d.numer_sta] = +d.ht_neige;
+            });
+            neigeData = infoData;
+            // Parse and sort the infoData
+            neigeData.forEach(d => {
+                d.Latitude = +d.Latitude;
+                d.Longitude = +d.Longitude;
+                d.Altitude = +d.Altitude;
+                d.ht_neige = nivoMap[d.ID]*200 || 0; // Add ht_neige from nivoMap
+            });
+            neigeData = neigeData.filter(d => d.ht_neige != 0); // Filter out zero ht_neige
 
-const n = 20 // number of layers 
-const m = 200 // number of samples per layer
-const k = 10 // number of bumps per layer
+            neigeData.sort((a, b) => a.Altitude - b.Altitude);
 
-const svg = d3.select('body')
-  .append('svg')
-  .attr('width', width + margin.left + margin.right)
-  .attr('height', height + margin.top + margin.bottom)
-  .append('g')
-  .attr('transform', `translate(${margin.left}, ${margin.top})`);
+            // Prepare data for stacking
+            const stackData = neigeData.map((d, i) => ({
+                index: i,
+                Altitude: d.Altitude,
+                ht_neige: d.ht_neige,
+                Latitude: d.Latitude,
+                Longitude: d.Longitude,
+                ID: d.ID,
+                Nom: d.Nom
+            }));
 
-d3.csv('nivo.csv')
-  .then(data => {
-    // Convert string values to numbers and extract year from date
-    data.forEach(d => {
-      d.ht_neige = +d.ht_neige;
-      d.numer_sta = +d.numer_sta;
-      d.date = d.date.slice(0, 4);
-      d.date = +d.date;
-    });
+            // Create the stacked area chart with interactivity
+            createStackedAreaChart(stackData);
+        }
 
-    // Group data by date and station, then find max snow height
-    const groupedData = d3.groups(data, d => d.date, d => d.numer_sta)
-      .map(([date, numer_stas]) => ({
-        date: +date,
-        numer_stas: numer_stas.map(numer_sta => ({
-          numer_sta: numer_sta[0].numer_sta,
-          max_ht_neige: d3.max(numer_sta, d => d.ht_neige)
-        }))
-      }));
+        function createStackedAreaChart(data) {
+            const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+            const width = 928 - margin.left - margin.right;
+            const height = 500 - margin.top - margin.bottom;
 
-    console.log(groupedData);
+            const svg = d3.select("#chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    // Create scales
-    const xScale = d3.scaleLinear()
-      .domain([d3.min(groupedData, d => d.date), d3.max(groupedData, d => d.date)])
-      .range([0, width]);
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
 
-    const yScale = d3.scaleLinear()
-      .domain([0, d3.max(groupedData.flatMap(d => d.numer_stas), d => d.max_ht_neige)])
-      .range([height, 0]);
+            const x = d3.scaleLinear()
+                .domain([0, data.length - 1])
+                .range([0, width]);
 
-    // Create axes
-    svg.append('g')
-      .attr('transform', `translate(0, ${height})`)
-      .call(d3.axisBottom(xScale));
+            const y = d3.scaleLinear()
+                .domain([0, d3.max(data, d => d.Altitude + d.ht_neige)]) // Adjust for visualization
+                .range([height, 0]);
 
-    svg.append('g')
-      .call(d3.axisLeft(yScale));
+            const color = d3.scaleOrdinal()
+                .domain(["Altitude", "ht_neige"])
+                .range(["brown", "blue"]);
 
-    // Draw circles
-    svg.selectAll('circle')
-      .data(groupedData.flatMap(d => d.numer_stas))
-      .enter()
-      .append('circle')
-      .attr('cx', d => xScale(d.date))
-      .attr('cy', d => yScale(d.max_ht_neige))
-      .attr('r', 5);
+            const stack = d3.stack()
+                .keys(["Altitude", "ht_neige"]);
 
-    // Add station labels
-    svg.selectAll('text')
-      .data(groupedData.flatMap(d => d.numer_stas))
-      .enter()
-      .append('text')
-      .attr('x', d => xScale(d.date))
-      .attr('y', d => yScale(d.max_ht_neige) + 5)
-      .text(d => d.numer_sta);
-  })
-  .catch(error => {
-    console.error('Error loading CSV:', error);
-  });
+            const series = stack(data);
 
+            const area = d3.area()
+                .x((d, i) => x(i))
+                .y0(d => y(d[0]))
+                .y1(d => y(d[1])); // Adjust ht_neige for visualization
 
-</script>
+            svg.selectAll(".layer")
+                .data(series)
+                .enter().append("path")
+                .attr("class", "layer")
+                .attr("fill", d => color(d.key))
+                .attr("d", area)
+                .on("mouseover", function(event, d) {
+                    const [mouseX, mouseY] = d3.pointer(event);
+                    const x0 = x.invert(mouseX);
+                    const i = Math.round(x0);
+                    const dataPoint = data[i];
+                    tooltip.transition()
+                        .duration(200)
+                        .style("opacity", 0.9);
+                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige}`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function(d) {
+                    tooltip.transition()
+                        .duration(500)
+                        .style("opacity", 0);
+                });
+
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(data.length));
+
+            svg.append("g")
+                .call(d3.axisLeft(y).tickSize(-width).tickFormat(d => d))
+                .selectAll(".tick line").attr("stroke-opacity", 0.1);
+
+            svg.append("line")
+                .attr("x1", 0)
+                .attr("x2", width)
+                .attr("y1", y(0))
+                .attr("y2", y(0))
+                .attr("stroke", "black");
+
+            // Log the series to verify the stacking
+            console.log(series);
+        }
+    </script>
 </body>
 </html>
