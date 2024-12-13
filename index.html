@@ -145,17 +145,10 @@
                     yearlyData[year] = {};
                 }
                 if (!yearlyData[year][d.numer_sta]) {
-                    yearlyData[year][d.numer_sta] = { sum: 0, count: 0 };
+                    yearlyData[year][d.numer_sta] = 0 ;
                 }
-                yearlyData[year][d.numer_sta].sum += +d.ht_neige;
-                yearlyData[year][d.numer_sta].count += 1;
-            });
-
-            // Calculate the average snow height for each station and year
-            Object.keys(yearlyData).forEach(year => {
-                Object.keys(yearlyData[year]).forEach(key => {
-                    yearlyData[year][key] = yearlyData[year][key].sum / yearlyData[year][key].count;
-                });
+                if (d.ht_neige > yearlyData[year][d.numer_sta])
+                    yearlyData[year][d.numer_sta] = +d.ht_neige;
             });
 
             processedData = yearlyData;
@@ -167,7 +160,7 @@
                     Latitude: +d.Latitude,
                     Longitude: +d.Longitude,
                     Altitude: +d.Altitude,
-                    ht_neige: (processedData[year][d.ID] || 0) * 200,
+                    ht_neige: (processedData[year][d.ID] || 0) * 100,
                     ID: d.ID,
                     Nom: d.Nom
                 })).filter(d => d.ht_neige !== 0);
@@ -269,9 +262,9 @@
                     const i = Math.round(x0);
                     const dataPoint = data[i];
                     tooltip.transition()
-                        .duration(200)
+                        .duration(100)
                         .style("opacity", 0.9);
-                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / 200}`)
+                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / 100}`)
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
                 })
