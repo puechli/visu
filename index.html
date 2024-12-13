@@ -4,6 +4,53 @@
     <meta charset="UTF-8">
     <title>CSV to Stacked Area Chart</title>
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            font-size: 24px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .controls label {
+            margin: 0 10px;
+            font-weight: bold;
+        }
+        
+        .controls input[type="range"] {
+            margin: 0 10px;
+        }
+        
+        .controls select {
+            margin: 0 10px;
+            padding: 5px;
+            font-size: 14px;
+        }
+        
+        #chart {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
         .tooltip {
             position: absolute;
             text-align: center;
@@ -21,34 +68,84 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
+    <div class="header">CSV to Stacked Area Chart</div>
+    <div class="controls">
+        <label for="yearSlider">Year: </label>
+        <input type="range" min="1996" max="2024" value="2020" class="slider" id="yearSlider">
+        <span id="selectedYear">2020</span>
+        
+        <label for="variableSelect">Variable: </label>
+        <select id="variableSelect">
+            <option value="var_year">Year</option>
+            <option value="var_altitude">Altitude</option>
+            <!-- Add more variables as needed -->
+        </select>
+    </div>
     <div id="chart"></div>
     <script>
-        Promise.all([
-            d3.csv("info.csv"),
-            d3.csv("nivo.csv")
-        ]).then(([infoData, nivoData]) => {
-            processData(infoData, nivoData);
-        });
+        let definedDate = 2020;
+        let selectedVariable = 'ht_neige';
+        let processedData = {};
 
-        function processData(infoData, nivoData) {
-            // Convert nivoData to a lookup map based on numer_sta
-            const nivoMap = {};
+        const slider = document.getElementById('yearSlider');
+        const output = document.getElementById('selectedYear');
+        const variableSelect = document.getElementById('variableSelect');
+
+        output.innerHTML = slider.value;
+
+        slider.oninput = function() {
+            definedDate = this.value;
+            output.innerHTML = definedDate;
+            updateChart();
+        }
+
+        variableSelect.onchange = function() {
+            selectedVariable = this.value;
+            updateChart();
+        }
+
+        function preprocessData(infoData, nivoData) {
+            const yearlyData = {};
             nivoData.forEach(d => {
-                nivoMap[d.numer_sta] = +d.ht_neige;
+                const year = d.date.slice(0, 4);
+                if (!yearlyData[year]) {
+                    yearlyData[year] = {};
+                }
+                if (!yearlyData[year][d.numer_sta]) {
+                    yearlyData[year][d.numer_sta] = { sum: 0, count: 0 };
+                }
+                yearlyData[year][d.numer_sta].sum += +d.ht_neige;
+                yearlyData[year][d.numer_sta].count += 1;
             });
-            neigeData = infoData;
-            // Parse and sort the infoData
-            neigeData.forEach(d => {
-                d.Latitude = +d.Latitude;
-                d.Longitude = +d.Longitude;
-                d.Altitude = +d.Altitude;
-                d.ht_neige = nivoMap[d.ID]*200 || 0; // Add ht_neige from nivoMap
+
+            Object.keys(yearlyData).forEach(year => {
+                Object.keys(yearlyData[year]).forEach(key => {
+                    yearlyData[year][key] = yearlyData[year][key].sum / yearlyData[year][key].count;
+                });
             });
-            neigeData = neigeData.filter(d => d.ht_neige != 0); // Filter out zero ht_neige
 
-            neigeData.sort((a, b) => a.Altitude - b.Altitude);
+            processedData = yearlyData;
 
-            // Prepare data for stacking
+            const neigeDataMap = {};
+            for (const year in processedData) {
+                neigeDataMap[year] = infoData.map(d => ({
+                    Latitude: +d.Latitude,
+                    Longitude: +d.Longitude,
+                    Altitude: +d.Altitude,
+                    ht_neige: (processedData[year][d.ID] || 0) * 200,
+                    ID: d.ID,
+                    Nom: d.Nom
+                })).filter(d => d.ht_neige !== 0);
+
+                neigeDataMap[year].sort((a, b) => a.Altitude - b.Altitude);
+            }
+
+            return neigeDataMap;
+        }
+
+        function updateChart() {
+            const neigeData = processedData[definedDate.toString()];
+
             const stackData = neigeData.map((d, i) => ({
                 index: i,
                 Altitude: d.Altitude,
@@ -59,11 +156,12 @@
                 Nom: d.Nom
             }));
 
-            // Create the stacked area chart with interactivity
             createStackedAreaChart(stackData);
         }
 
         function createStackedAreaChart(data) {
+            d3.select("#chart").selectAll("*").remove(); // Clear existing chart
+
             const margin = { top: 20, right: 30, bottom: 30, left: 50 };
             const width = 928 - margin.left - margin.right;
             const height = 500 - margin.top - margin.bottom;
@@ -84,7 +182,7 @@
                 .range([0, width]);
 
             const y = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.Altitude + d.ht_neige)]) // Adjust for visualization
+                .domain([0, d3.max(data, d => d.Altitude + d.ht_neige)])
                 .range([height, 0]);
 
             const color = d3.scaleOrdinal()
@@ -99,7 +197,7 @@
             const area = d3.area()
                 .x((d, i) => x(i))
                 .y0(d => y(d[0]))
-                .y1(d => y(d[1])); // Adjust ht_neige for visualization
+                .y1(d => y(d[1]));
 
             svg.selectAll(".layer")
                 .data(series)
@@ -115,7 +213,7 @@
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", 0.9);
-                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige/200}`)
+                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / 200}`)
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
                 })
@@ -140,9 +238,16 @@
                 .attr("y2", y(0))
                 .attr("stroke", "black");
 
-            // Log the series to verify the stacking
             console.log(series);
         }
+
+        Promise.all([
+            d3.csv("info.csv"),
+            d3.csv("nivo.csv")
+        ]).then(([infoData, nivoData]) => {
+            processedData = preprocessData(infoData, nivoData);
+            updateChart(); // Initial chart display
+        });
     </script>
 </body>
 </html>
