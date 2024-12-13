@@ -100,6 +100,7 @@
         <button id="modeButton" class="mode-button">Max</button>
     </div>
     <div id="chart"></div>
+    <div id="bigmap"></div>
     <script>
         // Global variables to store state and processed data
         let scaleNeige = 100;
@@ -248,6 +249,112 @@
         }
 
         /**
+         * Updates the heightmap based on the selected year
+         */
+        function updateHeightmap() {
+            processedData = preprocessData(infoData, nivoData);
+            const neigeData = processedData[definedDate.toString()]
+
+            // Prepare data for the stacked area heightmap
+            // Prepare data for the stacked area chart
+            const stackData = neigeData.map((d, i) => ({
+                index: i,
+                Altitude: d.Altitude,
+                ht_neige: d.ht_neige,
+                Latitude: d.Latitude,
+                Longitude: d.Longitude,
+                ID: d.ID,
+                Nom: d.Nom
+            }));
+
+            createHeightmap(stackData);
+        }
+
+        /**
+         * Creates or updates the heightmap
+         * @param {array} data - Processed data for the heightmap.
+         */
+        function createHeightmap(data) {
+            // Clear any existing bigmap elements
+            d3.select('#bigmap').selectAll("*").remove();
+
+            // Define chart margins, width and height
+            const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+            const width = Math.max(928, window.innerWidth - 40) - margin.left - margin.right; // Responsive width
+            const height = 500 - margin.top - margin.bottom;
+
+            // Create the SVG container
+            const svg = d3.select("#bigmap")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+            // Define x and y scales
+            const x = d3.scaleLinear()
+                .domain([d3.min(data, d => d.Longitude), d3.max(data, d => d.Longitude)])
+                .range([0, width]);
+
+            const y = d3.scaleLinear()
+            .domain([d3.min(data, d => d.Latitude), d3.max(data, d => d.Latitude)])
+                .range([height, 0]);
+
+            // Define the color sequence from light green to brown
+            const colors = [
+                "#E6FFCC", // Light green
+                "#C6F4D6",
+                "#9FD8CD",
+                "#66CCCC",
+                "#33B5E5",
+                "#0099CC",
+                "#00698F",
+                "#003333",
+                "#663300", // Brown
+                "#330000"
+            ];
+
+            // Function to interpolate between colors
+            function interpolateColor(t) {
+                const index = Math.floor(t);
+                const fraction = t - index;
+                let start = index < colors.length ? colors[index] : colors[colors.length - 1];
+                let end = index + 1 < colors.length ? colors[index + 1] : colors[colors.length - 1];
+                return d3.interpolateRgb(start, end)(fraction);
+            }
+
+            // Define the color sequence from light gray to light blue passing through white
+            const snow_colors = [
+                "#E5E5EA", // Light gray
+                "#FFFFFF", // White
+                "#ADD8E6", // Light blue
+            ]
+
+            // Function to interpolate between snow colors
+            function interpolateSnowColor(t) {
+                const index = Math.floor(t);
+                const fraction = t - index;
+                let start = index < snow_colors.length ? snow_colors[index] : snow_colors[snow_colors.length - 1];
+                let end = index + 1 < snow_colors.length ? snow_colors[index + 1] : snow_colors[snow_colors.length - 1];
+                return d3.interpolateRgb(start, end)(fraction);
+            }
+            
+            const colorScale = d3.scaleLinear()
+                .domain([d3.min(data, d => d.Altitude + d.ht_neige), d3.max(data, d => d.Altitude + d.ht_neige)])
+                .range([0, colors.length - 1]);
+            
+            svg.selectAll('rect')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('x', d => x(d.Longitude) - 20)
+                .attr('y', d => y(d.Latitude) - 20)
+                .attr('width', 40)
+                .attr('height', 40)
+                .attr('fill', d => interpolateColor(colorScale(d.d.Altitude)));
+        }
+
+        /**
          * Creates or updates the stacked area chart.
          * @param {Array} data - Processed data for the chart.
          */
@@ -313,7 +420,7 @@
                     const i = Math.round(x0);
                     const dataPoint = data[i];
                     tooltip.transition()
-                        .duration(100)
+                        .duration(200)
                         .style("opacity", 0.9);
                     tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / scaleNeige}`)
                         .style("left", (event.pageX + 5) + "px")
@@ -354,12 +461,14 @@
             nivoData = nivoDataSCV;
             processedData = preprocessData(infoData, nivoData);
             updateChart(); // Initial chart display
+            updateHeightmap();
         }).catch(error => {
             console.error("Error loading CSV files:", error);
         });
 
         // Make the chart responsive
         window.addEventListener("resize", updateChart);
+        window.addEventListener("resize", updateHeightmap);
     </script>
 </body>
 </html>
