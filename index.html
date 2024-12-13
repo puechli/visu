@@ -65,6 +65,22 @@
             pointer-events: none;
             opacity: 0.9;
         }
+
+        /* Style for the mode button */
+        .mode-button {
+            margin: 0 10px;
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .mode-button:hover {
+            background-color: #45a049;
+        }
     </style>
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
@@ -80,18 +96,23 @@
          </label>
         <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
         <span id="selectedValue">2020</span>
+        <!-- Add the mode button -->
+        <button id="modeButton" class="mode-button">Max</button>
     </div>
     <div id="chart"></div>
     <script>
         // Global variables to store state and processed data
+        let scaleNeige = 100;
         let definedDate = 2020;
         let selectedVariable = 'var_year';
         let processedData = {};
+        let currentMode = 'max'; // Default mode is "Max"
 
         // DOM elements for interaction
         const variableSelect = document.getElementById('variableSelect');
         const slider = document.getElementById('valueSlider');
         const output = document.getElementById('selectedValue');
+        const modeButton = document.getElementById('modeButton');
 
         // Initialize the displayed year
         output.innerHTML = slider.value;
@@ -103,8 +124,7 @@
             updateChart();
         }
 
-        function updateSliderRange(infoData) {
-            console.log('updateSliderRange');
+        function updateSliderRange() {
             if (selectedVariable === 'var_year') {
                 // For "Year", set the range to 1996 to 2024
                 slider.min = 1996;
@@ -117,7 +137,7 @@
                 const maxAltitude = Math.max(...altitudes);
                 slider.min = minAltitude;
                 slider.max = maxAltitude;
-                slider.value = definedDate; // Keep the current value
+                slider.value = minAltitude;
             }
             output.innerHTML = slider.value; // Update the displayed value
         }
@@ -126,7 +146,15 @@
         variableSelect.onchange = function() {
             selectedVariable = this.value;
             updateChart();
-            updateSliderRange(infoData);
+            updateSliderRange();
+        }
+
+        // Event listener for the mode button
+        modeButton.onclick = function() {
+            // Toggle between "Max" and "Average" modes
+            currentMode = currentMode === 'max' ? 'average' : 'max';
+            modeButton.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1); // Update button text
+            updateChart(); // Update the chart based on the new mode
         }
 
         /**
@@ -136,38 +164,57 @@
          * @returns {Object} - Processed data mapped by year.
          */
         function preprocessData(infoData, nivoData) {
-            const yearlyData = {};
+            const yearlyDataMAX = {};
+            const yearlyDataAVERAGE = {};
 
-            // Aggregate data by year and station
+            // Aggregate data by year and station MAX and AVERAGE
             nivoData.forEach(d => {
                 const year = d.date.slice(0, 4);
-                if (!yearlyData[year]) {
-                    yearlyData[year] = {};
+                // MAX
+                if (!yearlyDataMAX[year]) {
+                    yearlyDataMAX[year] = {};
                 }
-                if (!yearlyData[year][d.numer_sta]) {
-                    yearlyData[year][d.numer_sta] = { sum: 0, count: 0 };
+                if (!yearlyDataMAX[year][d.numer_sta]) {
+                    yearlyDataMAX[year][d.numer_sta] = 0; 
                 }
-                yearlyData[year][d.numer_sta].sum += +d.ht_neige;
-                yearlyData[year][d.numer_sta].count += 1;
+                if (+d.ht_neige > yearlyDataMAX[year][d.numer_sta]) {
+                    yearlyDataMAX[year][d.numer_sta] = +d.ht_neige;
+                }
+                // AVERAGE
+                if (!yearlyDataAVERAGE[year]) {
+                    yearlyDataAVERAGE[year] = {};
+                }
+                if (!yearlyDataAVERAGE[year][d.numer_sta]) {
+                    yearlyDataAVERAGE[year][d.numer_sta] = { sum: 0, count: 0 };
+                }
+                yearlyDataAVERAGE[year][d.numer_sta].sum += +d.ht_neige;
+                yearlyDataAVERAGE[year][d.numer_sta].count += 1;
             });
 
             // Calculate the average snow height for each station and year
-            Object.keys(yearlyData).forEach(year => {
-                Object.keys(yearlyData[year]).forEach(key => {
-                    yearlyData[year][key] = yearlyData[year][key].sum / yearlyData[year][key].count;
+            Object.keys(yearlyDataAVERAGE).forEach(year => {
+                Object.keys(yearlyDataAVERAGE[year]).forEach(key => {
+                    yearlyDataAVERAGE[year][key] = yearlyDataAVERAGE[year][key].sum / yearlyDataAVERAGE[year][key].count;
                 });
             });
 
-            processedData = yearlyData;
+            // Return the processed data based on the current mode
+            if (currentMode === 'max') {
+                return mapPreprocessData(yearlyDataMAX);
+            } else {
+                return mapPreprocessData(yearlyDataAVERAGE);
+            }
+        }
 
+        function mapPreprocessData(yearlyData) {
             // Map the processed data to a format suitable for the chart
             const neigeDataMap = {};
-            for (const year in processedData) {
+            for (const year in yearlyData) {
                 neigeDataMap[year] = infoData.map(d => ({
                     Latitude: +d.Latitude,
                     Longitude: +d.Longitude,
                     Altitude: +d.Altitude,
-                    ht_neige: (processedData[year][d.ID] || 0) * 200,
+                    ht_neige: (yearlyData[year][d.ID] || 0) * scaleNeige,
                     ID: d.ID,
                     Nom: d.Nom
                 })).filter(d => d.ht_neige !== 0);
@@ -183,24 +230,21 @@
          * Updates the chart based on the selected year and variable.
          */
         function updateChart() {
-            if(selectedVariable === 'var_year') {
-                const neigeData = processedData[definedDate.toString()];
+            processedData = preprocessData(infoData, nivoData); // Re-process data based on the current mode
+            const neigeData = processedData[definedDate.toString()];
 
-                // Prepare data for the stacked area chart
-                const stackData = neigeData.map((d, i) => ({
-                    index: i,
-                    Altitude: d.Altitude,
-                    ht_neige: d.ht_neige,
-                    Latitude: d.Latitude,
-                    Longitude: d.Longitude,
-                    ID: d.ID,
-                    Nom: d.Nom
-                }));
+            // Prepare data for the stacked area chart
+            const stackData = neigeData.map((d, i) => ({
+                index: i,
+                Altitude: d.Altitude,
+                ht_neige: d.ht_neige,
+                Latitude: d.Latitude,
+                Longitude: d.Longitude,
+                ID: d.ID,
+                Nom: d.Nom
+            }));
 
-                createStackedAreaChart(stackData);
-            } else{
-                console.log("Not implemented yet");
-            }
+            createStackedAreaChart(stackData);
         }
 
         /**
@@ -271,7 +315,7 @@
                     tooltip.transition()
                         .duration(200)
                         .style("opacity", 0.9);
-                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / 200}`)
+                    tooltip.html(`ID: ${dataPoint.ID}<br>Nom: ${dataPoint.Nom}<br>Altitude: ${dataPoint.Altitude}<br>ht_neige: ${dataPoint.ht_neige / scaleNeige}`)
                         .style("left", (event.pageX + 5) + "px")
                         .style("top", (event.pageY - 28) + "px");
                 })
