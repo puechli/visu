@@ -100,7 +100,8 @@
         <button id="modeButton" class="mode-button">Max</button>
     </div>
     <div id="chart"></div>
-    <div id="bigmap"></div>
+    <div id="alpes"></div>
+    <div id="pyren"></div>
     <script>
         // Global variables to store state and processed data
         let scaleNeige = 100;
@@ -147,6 +148,7 @@
         variableSelect.onchange = function() {
             selectedVariable = this.value;
             updateChart();
+            updateHeightmap();
             updateSliderRange();
         }
 
@@ -156,6 +158,7 @@
             currentMode = currentMode === 'max' ? 'average' : 'max';
             modeButton.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1); // Update button text
             updateChart(); // Update the chart based on the new mode
+            updateHeightmap();
         }
 
         /**
@@ -275,8 +278,9 @@
          * @param {array} data - Processed data for the heightmap.
          */
         function createHeightmap(data) {
-            // Clear any existing bigmap elements
-            d3.select('#bigmap').selectAll("*").remove();
+            // Clear any existing elements
+            d3.select('#alpes').selectAll("*").remove();
+            d3.select('#pyren').selectAll("*").remove();
 
             // Define chart margins, width and height
             const margin = { top: 20, right: 30, bottom: 30, left: 50 };
@@ -284,7 +288,15 @@
             const height = 500 - margin.top - margin.bottom;
 
             // Create the SVG container
-            const svg = d3.select("#bigmap")
+            const svgAlpes = d3.select("#alpes")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // Create the SVG container
+            const svgPyren = d3.select("#pyren")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
@@ -292,29 +304,31 @@
                 .attr("transform", `translate(${margin.left},${margin.top})`);
             
             // Define x and y scales
-            const x = d3.scaleLinear()
-                .domain([d3.min(data, d => d.Longitude), d3.max(data, d => d.Longitude)])
+            const alpes_x = d3.scaleLinear()
+                .domain([5.0, d3.max(data, d => d.Longitude)])
                 .range([0, width]);
 
-            const y = d3.scaleLinear()
+            const alpes_y = d3.scaleLinear()
+            .domain([d3.min(data, d => d.Latitude), d3.max(data, d => d.Latitude)])
+                .range([height, 0]);
+            
+            // Define x and y scales
+            const pyren_x = d3.scaleLinear()
+                .domain([d3.min(data, d => d.Longitude), 2.5])
+                .range([0, width]);
+
+            const pyren_y = d3.scaleLinear()
             .domain([d3.min(data, d => d.Latitude), d3.max(data, d => d.Latitude)])
                 .range([height, 0]);
 
-            // Define the color sequence from light green to brown
+            // Define the color sequence from light gray to light blue passing through white
             const colors = [
-                "#E6FFCC", // Light green
-                "#C6F4D6",
-                "#9FD8CD",
-                "#66CCCC",
-                "#33B5E5",
-                "#0099CC",
-                "#00698F",
-                "#003333",
-                "#663300", // Brown
-                "#330000"
-            ];
+                "#E5E5EA", // Light gray
+                "#FFFFFF", // White
+                "#ADD8E6", // Light blue
+            ]
 
-            // Function to interpolate between colors
+            // Function to interpolate between snow colors
             function interpolateColor(t) {
                 const index = Math.floor(t);
                 const fraction = t - index;
@@ -322,36 +336,52 @@
                 let end = index + 1 < colors.length ? colors[index + 1] : colors[colors.length - 1];
                 return d3.interpolateRgb(start, end)(fraction);
             }
-
-            // Define the color sequence from light gray to light blue passing through white
-            const snow_colors = [
-                "#E5E5EA", // Light gray
-                "#FFFFFF", // White
-                "#ADD8E6", // Light blue
-            ]
-
-            // Function to interpolate between snow colors
-            function interpolateSnowColor(t) {
-                const index = Math.floor(t);
-                const fraction = t - index;
-                let start = index < snow_colors.length ? snow_colors[index] : snow_colors[snow_colors.length - 1];
-                let end = index + 1 < snow_colors.length ? snow_colors[index + 1] : snow_colors[snow_colors.length - 1];
-                return d3.interpolateRgb(start, end)(fraction);
-            }
             
             const colorScale = d3.scaleLinear()
                 .domain([d3.min(data, d => d.Altitude + d.ht_neige), d3.max(data, d => d.Altitude + d.ht_neige)])
                 .range([0, colors.length - 1]);
             
-            svg.selectAll('rect')
+            svgAlpes.selectAll('rect')
                 .data(data)
                 .enter()
                 .append('rect')
-                .attr('x', d => x(d.Longitude) - 20)
-                .attr('y', d => y(d.Latitude) - 20)
-                .attr('width', 40)
-                .attr('height', 40)
-                .attr('fill', d => interpolateColor(colorScale(d.d.Altitude)));
+                .attr('x', d => alpes_x(d.Longitude) - 20)
+                .attr('y', d => alpes_y(d.Latitude) - 20)
+                .attr('width', 20)
+                .attr('height', 20)
+                .attr('fill', d => interpolateColor(colorScale(d.Altitude + d.ht_neige)))
+                .attr('style', 'border: 2px solid black;');
+
+            const alpes_title_margin = 30;
+            const alpes_title = svgAlpes.append('text')
+                .attr('x', width / 2)
+                .attr('y', height + alpes_title_margin)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '16px')
+                .attr('font-weight', 'bold')
+                .text('Les Alpes');
+            
+            svgAlpes.attr('height', height + alpes_title_margin * 2);
+            
+            svgPyren.selectAll('rect')
+                .data(data)
+                .enter()
+                .append('rect')
+                .attr('x', d => pyren_x(d.Longitude) - 20)
+                .attr('y', d => pyren_y(d.Latitude) - 20)
+                .attr('width', 20)
+                .attr('height', 20)
+                .attr('fill', d => interpolateColor(colorScale(d.Altitude + d.ht_neige)))
+                .attr('style', 'border: 2px solid black;');
+
+            const pyren_title_margin = 30;
+            const pyren_title = svgPyren.append('text')
+                .attr('x', width / 2)
+                .attr('y', height + pyren_title_margin)
+                .attr('text-anchor', 'middle')
+                .attr('font-size', '16px')
+                .attr('font-weight', 'bold')
+                .text('Les Pyrennées');
         }
 
         /**
