@@ -39,10 +39,21 @@
             margin: 0 10px;
         }
         
-        .controls select {
+        .controls select,
+        .mode-button {
             margin: 0 10px;
-            padding: 5px;
+            padding: 5px 10px;
             font-size: 14px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .controls select:hover,
+        .mode-button:hover {
+            background-color: #45a049;
         }
         
         #chart {
@@ -65,45 +76,31 @@
             pointer-events: none;
             opacity: 0.9;
         }
-
-        /* Style for the mode button */
-        .mode-button {
-            margin: 0 10px;
-            padding: 5px 10px;
-            font-size: 14px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .mode-button:hover {
-            background-color: #45a049;
-        }
     </style>
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
     <div class="header">CSV to Stacked Area Chart</div>
     <div class="controls">
-        <label for="valueSlider">
-            <select id="variableSelect">
-                <option value="var_year">Year</option>
-                <option value="var_altitude">Altitude</option>
-                <!-- Add more variables as needed -->
-            </select>
-         </label>
+        <!-- Dropdown for "Year"/"Altitude" -->
+        <select id="variableSelect" class="mode-button">
+            <option value="var_year">Year</option>
+            <option value="var_altitude">Altitude</option>
+            <!-- Add more variables as needed -->
+        </select>
+        
+        <!-- Slider for value selection -->
         <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
         <span id="selectedValue">2020</span>
-        <!-- Add the mode button -->
+        
+        <!-- Button for "Max"/"Average" -->
         <button id="modeButton" class="mode-button">Max</button>
     </div>
     <div id="chart"></div>
     <script>
         // Global variables to store state and processed data
         let scaleNeige = 100;
-        let definedDate = 2020;
+        let definedDate = 1996;
         let selectedVariable = 'var_year';
         let processedData = {};
         let currentMode = 'max'; // Default mode is "Max"
@@ -145,6 +142,7 @@
         // Event listener for the variable dropdown
         variableSelect.onchange = function() {
             selectedVariable = this.value;
+            definedDate = 1996; // Reset the defined date
             updateChart();
             updateSliderRange();
         }
