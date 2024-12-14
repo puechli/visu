@@ -100,9 +100,11 @@
     <script>
         // Global variables to store state and processed data
         let scaleNeige = 100;
-        let definedDate = 1996;
+        let sliderValue = 1996;
         let selectedVariable = 'var_year';
         let processedData = {};
+        let processedNeigeDataMax = {};
+        let processedNeigeDataAverage = {};
         let currentMode = 'max'; // Default mode is "Max"
 
         // DOM elements for interaction
@@ -116,8 +118,15 @@
 
         // Event listener for the slider
         slider.oninput = function() {
-            definedDate = this.value;
-            output.innerHTML = definedDate;
+            sliderValue = this.value;
+
+            if (selectedVariable === 'var_year') {
+                output.innerHTML = sliderValue;
+            } else {
+                const lowerBound = parseInt(sliderValue, 10) - 50;
+                const upperBound = parseInt(sliderValue, 10) + 50;
+                output.innerHTML = `${lowerBound} - ${upperBound}`;   
+            }
             updateChart();
         }
 
@@ -126,25 +135,33 @@
                 // For "Year", set the range to 1996 to 2024
                 slider.min = 1996;
                 slider.max = 2024;
-                slider.value = definedDate; // Keep the current value
+                slider.setAttribute('step', 1); // Set the step attribute
+                slider.value = sliderValue; // Keep the current value
+                output.innerHTML = sliderValue;
             } else if (selectedVariable === 'var_altitude') {
                 // For "Altitude", set the range to the minimum and maximum altitude in the data
                 const altitudes = infoData.map(d => +d.Altitude);
                 const minAltitude = Math.min(...altitudes);
                 const maxAltitude = Math.max(...altitudes);
                 slider.min = minAltitude;
-                slider.max = maxAltitude;
-                slider.value = minAltitude;
+                slider.max = maxAltitude;                
+                slider.value = slider.min;
+                sliderValue = slider.value;
+                console.log('sliderValue: ', sliderValue);
+                slider.setAttribute('step', 50); // Set the step attribute
+                const lowerBound = parseInt(sliderValue, 10) - 50;
+                const upperBound = parseInt(sliderValue, 10) + 50;
+                output.innerHTML = `${lowerBound} - ${upperBound}`;   
             }
-            output.innerHTML = slider.value; // Update the displayed value
+     
         }
 
         // Event listener for the variable dropdown
         variableSelect.onchange = function() {
             selectedVariable = this.value;
-            definedDate = 1996; // Reset the defined date
-            updateChart();
+            sliderValue = 1996; // Reset the defined date
             updateSliderRange();
+            updateChart();
         }
 
         // Event listener for the mode button
@@ -162,6 +179,23 @@
          * @returns {Object} - Processed data mapped by year.
          */
         function preprocessData(infoData, nivoData) {
+            const infoMap = {};
+            infoData.forEach(d => {
+                infoMap[d.ID] = {
+                    Latitude: +d.Latitude,
+                    Longitude: +d.Longitude,
+                    Altitude: +d.Altitude,
+                    Nom: d.Nom
+                };
+            });
+
+            processedAltitudeData = nivoData.filter(d => d.ht_neige !== 'mq').map(d => ({
+                numer_sta: d.numer_sta,
+                date: new Date(+d.date.slice(0, 4), +d.date.slice(4, 6) - 1, +d.date.slice(6, 8)),
+                ht_neige: +d.ht_neige,
+                Altitude: infoMap[d.numer_sta]?.Altitude || null
+            })).filter(d => d.Altitude !== null);
+
             const yearlyDataMAX = {};
             const yearlyDataAVERAGE = {};
 
@@ -196,12 +230,9 @@
                 });
             });
 
+            processedNeigeDataMax = mapPreprocessData(yearlyDataMAX);
+            processedNeigeDataAverage = mapPreprocessData(yearlyDataAVERAGE);
             // Return the processed data based on the current mode
-            if (currentMode === 'max') {
-                return mapPreprocessData(yearlyDataMAX);
-            } else {
-                return mapPreprocessData(yearlyDataAVERAGE);
-            }
         }
 
         function mapPreprocessData(yearlyData) {
@@ -228,28 +259,51 @@
          * Updates the chart based on the selected year and variable.
          */
         function updateChart() {
-            processedData = preprocessData(infoData, nivoData); // Re-process data based on the current mode
-            const neigeData = processedData[definedDate.toString()];
+            console.log('selectedVariable: ', selectedVariable, 'bool: ', selectedVariable === 'var_year');
 
-            // Prepare data for the stacked area chart
-            const stackData = neigeData.map((d, i) => ({
-                index: i,
-                Altitude: d.Altitude,
-                ht_neige: d.ht_neige,
-                Latitude: d.Latitude,
-                Longitude: d.Longitude,
-                ID: d.ID,
-                Nom: d.Nom
-            }));
+            if(selectedVariable === 'var_year'){
+                if (currentMode === 'max') {
+                    processedData = processedNeigeDataMax;
+                } else {
+                    processedData = processedNeigeDataAverage;
+                }
+                const neigeData = processedData[sliderValue.toString()];
+                // Prepare data for the stacked area chart
+                const stackData = neigeData.map((d, i) => ({
+                    index: i,
+                    Altitude: d.Altitude,
+                    ht_neige: d.ht_neige,
+                    Latitude: d.Latitude,
+                    Longitude: d.Longitude,
+                    ID: d.ID,
+                    Nom: d.Nom
+                }));
 
-            createStackedAreaChart(stackData);
+                createStackedAreaChartYear(stackData);
+            } else{
+                console.log('sliderValue: ', sliderValue);
+                const mappedData = mapPreprocessedData(processedAltitudeData, sliderValue);
+                createStackedAreaChartAltitude(mappedData);
+            }
+
         }
+        function mapPreprocessedData(processedData, altitude) {
+            const filteredData = processedData.filter(d => Math.abs(d.Altitude - altitude) <= 50);
 
+            const weeklyData = d3.rollups(
+            filteredData,
+            v => currentMode === 'average' ? d3.mean(v, d => d.ht_neige) : d3.max(v, d => d.ht_neige),
+            d => d3.timeWeek(d.date)
+            ).map(([week, ht_neige]) => ({ week, ht_neige }));
+
+            return weeklyData;
+        }
         /**
          * Creates or updates the stacked area chart.
          * @param {Array} data - Processed data for the chart.
          */
-        function createStackedAreaChart(data) {
+        function createStackedAreaChartYear(data) {
+            console.log('createStackedAreaChart Year');
             // Clear any existing chart elements
             d3.select("#chart").selectAll("*").remove();
 
@@ -341,21 +395,95 @@
                 .attr("y2", y(0))
                 .attr("stroke", "black");
         }
+        function createStackedAreaChartAltitude(weeklyData) {
+            console.log('createStackedAreaChart Altitude');
+            const margin = { top: 20, right: 30, bottom: 30, left: 50 };
+            const width = 800 - margin.left - margin.right;
+            const height = 400 - margin.top - margin.bottom;
+
+            d3.select("#chart").selectAll("*").remove(); // Clear existing chart
+
+            const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const x = d3.scaleTime()
+            .domain(d3.extent(weeklyData, d => d.week))
+            .range([0, width]);
+
+            const y = d3.scaleLinear()
+            .domain([0, d3.max(nivoData, d => +d.ht_neige)]) // Fixed y-axis range
+            .nice()
+            .range([height, 0]);
+
+            const area = d3.area()
+            .x(d => x(d.week))
+            .y0(height)
+            .y1(d => y(d.ht_neige));
+
+            // Add a tooltip
+            const tooltip = d3.select("body").append("div")
+                .attr("class", "tooltip")
+                .style("opacity", 0);
+
+            // Draw the stacked area layers
+            svg.append("path")
+            .datum(weeklyData)
+            .attr("fill", "steelblue")
+            .attr("d", area)
+            .on("mouseover", function(event, d) {
+                const [mouseX, mouseY] = d3.pointer(event);
+                const x0 = x.invert(mouseX);
+                const bisect = d3.bisector(d => d.week).left;
+                const index = bisect(weeklyData, x0, 1);
+                const dataPoint = weeklyData[index];
+                tooltip.transition()
+                    .duration(200)
+                    .style("opacity", 0.9);
+                tooltip.html(`Week: ${d3.timeFormat("%Y-%m-%d")(dataPoint.week)}<br>ht_neige: ${dataPoint.ht_neige}`)
+                    .style("left", (event.pageX + 5) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", function(d) {
+                tooltip.transition()
+                    .duration(500)
+                    .style("opacity", 0);
+            });
+
+            // Add x-axis with years only
+            svg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x)
+                .ticks(d3.timeYear.every(1)) // Show only years
+                .tickFormat(d3.timeFormat("%Y")) // Format as years
+            );
+
+            // Add y-axis
+            svg.append("g")
+            .call(d3.axisLeft(y));
+        }
+
 
         // Load and process data from CSV files
         let infoData, nivoData;
+        let processedAltitudeData = {};
+        variableSelect.value = 'var_year';
+
         Promise.all([
             d3.csv("info.csv"),
             d3.csv("nivo.csv")
         ]).then(([infoDataCSV, nivoDataSCV]) => {
             infoData = infoDataCSV;
             nivoData = nivoDataSCV;
-            processedData = preprocessData(infoData, nivoData);
+            preprocessData(infoData, nivoData);
             updateChart(); // Initial chart display
         }).catch(error => {
             console.error("Error loading CSV files:", error);
         });
-
+        
         // Make the chart responsive
         window.addEventListener("resize", updateChart);
     </script>
