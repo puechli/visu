@@ -287,71 +287,200 @@
             const width = Math.max(928, window.innerWidth - 40) - margin.left - margin.right; // Responsive width
             const height = 500 - margin.top - margin.bottom;
 
-            // Create the SVG container
+            // Define the color sequence from light green to gray
+            const z_colors = [
+                "#28fa14", // Light green
+                "#909e8f", // Regular gray
+            ];
+
+            // Define the color sequence from light light gray to white
+            const s_colors = [
+                "#EEEEEE", // Light light gray
+                "#FFFFFF", // White
+                "#DDEEFF" // Light blue
+            ];
+
+            // Create data points
+            const points = data.map(d => ({
+                x: d.Longitude,
+                y: d.Latitude,
+                z: d.Altitude,
+                s: d.ht_neige
+            }));
+
+            const alpes_points = points.filter(p => p.x > 5.0);
+            const pyren_points = points.filter(p => p.x < 2.5);
+
+            // Create border points to each area
+            const x_e = 0.38;
+            const y_e = 0.13;
+
+            const alpes_border = [
+                { x : d3.min(alpes_points, d => d.x) - x_e , y : d3.min(alpes_points, d => d.y) - y_e , z : 60.0 , s : 0.0 } , // sw
+                { x : d3.max(alpes_points, d => d.x) + x_e , y : d3.min(alpes_points, d => d.y) - y_e , z : 60.0 , s : 0.0 } , // se
+                { x : d3.min(alpes_points, d => d.x) - x_e , y : d3.max(alpes_points, d => d.y) + y_e , z : 60.0 , s : 0.0 } , // nw
+                { x : d3.max(alpes_points, d => d.x) + x_e , y : d3.max(alpes_points, d => d.y) + y_e , z : 60.0 , s : 0.0 }   // ne
+            ];
+
+            const pyren_border = [
+                { x : d3.min(pyren_points, d => d.x) - x_e , y : d3.min(pyren_points, d => d.y) - y_e , z : 60.0 , s : 0.0 } , // sw
+                { x : d3.max(pyren_points, d => d.x) + x_e , y : d3.min(pyren_points, d => d.y) - y_e , z : 60.0 , s : 0.0 } , // se
+                { x : d3.min(pyren_points, d => d.x) - x_e , y : d3.max(pyren_points, d => d.y) + y_e , z : 60.0 , s : 0.0 } , // nw
+                { x : d3.max(pyren_points, d => d.x) + x_e , y : d3.max(pyren_points, d => d.y) + y_e , z : 60.0 , s : 0.0 }   // ne
+            ];
+
+            // Divide each border (not yet implemented)
+            const x_d = 8;
+            const y_d = 3;
+
+            // Add those points
+            alpes_border.forEach(p => alpes_points.push(p));
+            pyren_border.forEach(p => pyren_points.push(p));
+
+            // Define x and y scales
+            const alpes_x = d3.scaleLinear()
+                .domain([d3.min(alpes_points, d => d.x), d3.max(alpes_points, d => d.x)])
+                .range([0, width]);
+
+            const alpes_y = d3.scaleLinear()
+                .domain([d3.min(alpes_points, d => d.y), d3.max(alpes_points, d => d.y)])
+                .range([height, 0]);
+            
+            // Define x and y scales
+            const pyren_x = d3.scaleLinear()
+                .domain([d3.min(pyren_points, d => d.x), d3.max(pyren_points, d => d.x)])
+                .range([0, width]);
+
+            const pyren_y = d3.scaleLinear()
+                .domain([d3.min(pyren_points, d => d.y), d3.max(pyren_points, d => d.y)])
+                .range([height, 0]);
+
+            // Create Voronoi Diagram
+            const alpes_delaunay = d3.Delaunay.from(alpes_points, p => alpes_x(p.x), p => alpes_y(p.y));
+            const alpes_voronoi  = alpes_delaunay.voronoi([0, 0, width, height]);
+            
+            const pyren_delaunay = d3.Delaunay.from(pyren_points, p => pyren_x(p.x), p => pyren_y(p.y));
+            const pyren_voronoi  = pyren_delaunay.voronoi([0, 0, width, height]);
+
+            // Create color scale for altitude (z) and snow height (s)
+            const z_colorScale = d3.scaleSequential()
+                .domain([d3.min(points, p => p.z), d3.max(points, p => p.z)])
+                .range([0, z_colors.length - 1]);
+            
+            const s_colorScale = d3.scaleSequential()
+                .domain([d3.min(points, p => p.s), d3.max(points, p => p.s)])
+                .range([0, s_colors.length - 1]);
+            
+            // Function to find the interpolation color
+            function interpolateColor(t, c) {
+                const index = Math.floor(t);
+                const fraction = t - index;
+                let start = index < c.length ? c[index] : c[c.length - 1];
+                let end = index + 1 < c.length ? c[index + 1] : c[c.length - 1];
+                return d3.interpolateRgb(start, end)(fraction);
+            }
+
+            // Create the SVG containers
             const svgAlpes = d3.select("#alpes")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
+                .attr("style", "border: 2px solid black;")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            // Create the SVG container
             const svgPyren = d3.select("#pyren")
                 .append("svg")
                 .attr("width", width + margin.left + margin.right)
                 .attr("height", height + margin.top + margin.bottom)
                 .append("g")
+                .attr("style", "border: 2px solid black;")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
-            
-            // Define x and y scales
-            const alpes_x = d3.scaleLinear()
-                .domain([5.0, d3.max(data, d => d.Longitude)])
-                .range([0, width]);
 
-            const alpes_y = d3.scaleLinear()
-            .domain([d3.min(data, d => d.Latitude), d3.max(data, d => d.Latitude)])
-                .range([height, 0]);
-            
-            // Define x and y scales
-            const pyren_x = d3.scaleLinear()
-                .domain([d3.min(data, d => d.Longitude), 2.5])
-                .range([0, width]);
+            // Function to find the gradient color for the Alpes
+            function createAlpesGradient(id, colors) {
+                const gradient = svgAlpes.append("defs")
+                    .append("linearGradient")
+                    .attr("id", id)
+                    .attr("x1", "0%")
+                    .attr("y1", "0%")
+                    .attr("x2", "100%")
+                    .attr("y2", "100%");
 
-            const pyren_y = d3.scaleLinear()
-            .domain([d3.min(data, d => d.Latitude), d3.max(data, d => d.Latitude)])
-                .range([height, 0]);
-
-            // Define the color sequence from light gray to light blue passing through white
-            const colors = [
-                "#E5E5EA", // Light gray
-                "#FFFFFF", // White
-                "#ADD8E6", // Light blue
-            ]
-
-            // Function to interpolate between snow colors
-            function interpolateColor(t) {
-                const index = Math.floor(t);
-                const fraction = t - index;
-                let start = index < colors.length ? colors[index] : colors[colors.length - 1];
-                let end = index + 1 < colors.length ? colors[index + 1] : colors[colors.length - 1];
-                return d3.interpolateRgb(start, end)(fraction);
+                colors.forEach((color, index) => {
+                    gradient.append("stop")
+                        .attr("offset", `${(index / (colors.length - 1)) * 100}%`)
+                        .attr("style", `stop-color:${color};stop-opacity:1`);
+                });
             }
-            
-            const colorScale = d3.scaleLinear()
-                .domain([d3.min(data, d => d.Altitude + d.ht_neige), d3.max(data, d => d.Altitude + d.ht_neige)])
-                .range([0, colors.length - 1]);
-            
-            svgAlpes.selectAll('rect')
-                .data(data)
-                .enter()
-                .append('rect')
-                .attr('x', d => alpes_x(d.Longitude) - 20)
-                .attr('y', d => alpes_y(d.Latitude) - 20)
-                .attr('width', 20)
-                .attr('height', 20)
-                .attr('fill', d => interpolateColor(colorScale(d.Altitude + d.ht_neige)))
-                .attr('style', 'border: 2px solid black;');
 
+            // Function to find the gradient color for the Pyrennées
+            function createPyrenGradient(id, colors) {
+                const gradient = svgPyren.append("defs")
+                    .append("linearGradient")
+                    .attr("id", id)
+                    .attr("x1", "0%")
+                    .attr("y1", "0%")
+                    .attr("x2", "100%")
+                    .attr("y2", "100%");
+
+                    colors.forEach((color, index) => {
+                        gradient.append("stop")
+                            .attr("offset", `${(index / (colors.length - 1)) * 100}%`)
+                            .attr("style", `stop-color:${color};stop-opacity:1`);
+                    });
+            }
+
+            // Function to sort neighbors according to angle
+            function sortAlpesNeighbors(center, neighbors) {
+                return neighbors.sort((a, b) => {
+                    const angleA = Math.atan2(alpes_points[a].y - center.y, alpes_points[a].x - center.x);
+                    const angleB = Math.atan2(alpes_points[b].y - center.y, alpes_points[b].x - center.x);
+                    return angleA - angleB;
+                });
+            }
+
+            // Draw Voronoi diagram
+            svgAlpes.selectAll('path')
+                .data(alpes_voronoi.cellPolygons())
+                .join('path')
+                .attr("d", (d, i) => !d ? null : `M${d.join("L")}Z`)
+                .attr("fill", (d, i) => {
+                    if (!d) return null;
+                    const neighbors = alpes_delaunay.neighbors(i);
+                    const sortedNeighbors = sortAlpesNeighbors(alpes_points[i], neighbors);
+                    const colors = [interpolateColor(s_colorScale(alpes_points[i].s), s_colors)];
+                    sortedNeighbors.forEach(neighborIndex => {
+                        colors.push(interpolateColor(s_colorScale(alpes_points[neighborIndex].s), s_colors));
+                    });
+                    const gradientId = `gradient-${i}`;
+                    createAlpesGradient(gradientId, colors);
+                    return `url(#${gradientId})`;
+                    })
+                .attr("class", "polygon");
+            
+            // Draw points as rectangles
+            svgAlpes.selectAll('circle')
+                .data(alpes_points)
+                .enter()
+                .append('circle')
+                .attr('cx', p => alpes_x(p.x))
+                .attr('cy', p => alpes_y(p.y))
+                .attr('r', 2)
+                .attr('fill', 'black')
+                .attr("class", "point");
+            
+            // Draw the surrounding black border
+            svgAlpes.append('rect')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', 'none')
+                .attr('stroke', 'black')
+                .attr('stroke-width', 1);
+
+            // Add title to the graph
             const alpes_title_margin = 30;
             const alpes_title = svgAlpes.append('text')
                 .attr('x', width / 2)
@@ -359,10 +488,11 @@
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '16px')
                 .attr('font-weight', 'bold')
-                .text('Les Alpes');
+                .text('Région des Alpes');
             
             svgAlpes.attr('height', height + alpes_title_margin * 2);
             
+            // Draw the points as rectangle
             svgPyren.selectAll('rect')
                 .data(data)
                 .enter()
@@ -371,9 +501,9 @@
                 .attr('y', d => pyren_y(d.Latitude) - 20)
                 .attr('width', 20)
                 .attr('height', 20)
-                .attr('fill', d => interpolateColor(colorScale(d.Altitude + d.ht_neige)))
-                .attr('style', 'border: 2px solid black;');
+                .attr('fill', d => interpolateColor(s_colorScale(d.Altitude + d.ht_neige), s_colors))
 
+            // Add title to the graph
             const pyren_title_margin = 30;
             const pyren_title = svgPyren.append('text')
                 .attr('x', width / 2)
@@ -381,7 +511,7 @@
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '16px')
                 .attr('font-weight', 'bold')
-                .text('Les Pyrennées');
+                .text('Région des Pyrennées');
         }
 
         /**
@@ -392,7 +522,7 @@
             // Clear any existing chart elements
             d3.select("#chart").selectAll("*").remove();
 
-            // Define chart margins, width, and height
+            // Define chart margins, width, and heightalpes_voronoi
             const margin = { top: 20, right: 30, bottom: 30, left: 50 };
             const width = Math.max(928, window.innerWidth - 40) - margin.left - margin.right; // Responsive width
             const height = 500 - margin.top - margin.bottom;
