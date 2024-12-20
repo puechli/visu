@@ -20,15 +20,27 @@
         </nav>
     </header>
     <main>
-        <div class="controls">
-            <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
-            <span id="selectedValue">2020</span>
-            <button id="modeButton" class="mode-button">Max</button>
-        </div>
         <!-- Conteneur pour la hauteur de neige -->
         <div id="snow-chart"></div>
         <!-- Conteneur pour la température -->
         <div id="temperature-chart"></div>
+        <div id="mini-snow-chart"></div>
+        <div id="mini-temperature-chart"></div>
+
+        <section class="introduction">
+            <h4>Commentaire : </h4>
+            <h5>Nous avons voulu étudier l’évolution de la hauteur de neige moyenne en février/mars ainsi que la température moyenne 
+                à cette période de l’année selon les années et les stations. 
+                Pour cela, nous avons pris tous les relevés de température et de hauteur de neige à notre disposition et nous avons 
+                fait une moyenne par annuelle selon les stations. Nous avons exclus les données manquante en leur attribuant des valeurs 
+                arbitraire (-1 pour la hauteur de neige et -273 pour la température). 
+                Ont été grisées les années où il n’y a pas de valeurs pour une station données. 
+                Nous avons ensuite trié les stations selon leur altitude (de la plus haute à la plus basse) afin de mieux visualiser 
+                les potentielles tendances qui pourraient se déssiner et avoir une meilleure harmonie graphique (en partant du principe 
+                que plus on est haut en altitude, plus il fera froid et il y aura de neige). Nous avons également pris la décision de garder 
+                toutes les stations mêmes celles qui n’ont pas ou très peu de données. Nous pensions qu’il pourrait être intéressant de voir 
+                si les données manquantes se situent plutot en haut altitude on en basse altitude.  </h5>
+        </section>
     </main>
     <script src="visu3.js" defer></script>
 </body>
