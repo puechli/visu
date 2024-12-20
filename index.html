@@ -83,11 +83,48 @@
             pointer-events: none;
             opacity: 0.9;
         }
+        .overlay {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 20%;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border: 1px solid #f5c6cb;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        .close-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .warning-sign {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+            font-size: 24px;
+            z-index: 1000;
+        }
+
     </style>
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
     <div class="header">Where Did The Snow Gow?</div>
+    
+    <div class="overlay" id="warningOverlay">
+        <span class="close-btn" onclick="hideOverlay()">x</span>
+        <p><strong>Warning:</strong> The data used in this visualization is limited to the months of February and March. Please exercise caution when interpreting the continuous date range displayed on the x-axis.</p>
+      </div>
+      <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
+        ⚠️
+      </div>
+      
     <div class="controls">
         <!-- Dropdown for "Year"/"Altitude" -->
         <label for="variableSelect">Select Variable:</label>
@@ -104,6 +141,9 @@
         
         <!-- Button for "Max"/"Average" -->
         <button id="modeButton" class="mode-button">Max</button>
+
+        <!-- Button for precision selection -->
+        <button id="precisionButton" class="mode-button" style="display:none;">Precision: Month</button>
     </div>
     <div class="titleDiv">
         <h3>Stacked Area Chart</h3>
@@ -133,12 +173,59 @@
         let processedNeigeDataMax = {};
         let processedNeigeDataAverage = {};
         let currentMode = 'max'; // Default mode is "Max"
+        let currentPrecision = 'month'; // Default precision is "month"
 
         // DOM elements for interaction
         const variableSelect = document.getElementById('variableSelect');
         const slider = document.getElementById('valueSlider');
         const output = document.getElementById('selectedValue');
         const modeButton = document.getElementById('modeButton');
+        const precisionButton = document.getElementById('precisionButton');
+
+        // Make the overlay draggable
+        let overlay = document.getElementById('warningOverlay');
+        function hideOverlay() {
+            document.getElementById('warningOverlay').style.display = 'none';
+            document.getElementById('warningSign').style.display = 'block';
+        }
+
+            function showOverlay() {
+            document.getElementById('warningOverlay').style.display = 'block';
+            document.getElementById('warningSign').style.display = 'none';
+        }
+        overlay.onmousedown = function(event) {
+        // Calculate the initial shift based on the mouse position relative to the overlay
+        let shiftX = event.clientX - overlay.getBoundingClientRect().left;
+        let shiftY = event.clientY - overlay.getBoundingClientRect().top;
+
+        // Adjust the initial position based on the current scroll position
+        moveAt(event.pageX - window.scrollX, event.pageY - window.scrollY);
+
+        function moveAt(pageX, pageY) {
+            // Update the overlay's position, taking into account the scroll position
+            overlay.style.left = pageX - shiftX + 'px';
+            overlay.style.top = pageY - shiftY + 'px';
+        }
+
+        function onMouseMove(event) {
+            // Adjust the mouse position by the current scroll position
+            moveAt(event.pageX - window.scrollX, event.pageY - window.scrollY);
+        }
+
+        // Attach the mousemove event listener
+        document.addEventListener('mousemove', onMouseMove);
+
+        // Remove the mousemove event listener when the mouse button is released
+        overlay.onmouseup = function() {
+            document.removeEventListener('mousemove', onMouseMove);
+            overlay.onmouseup = null;
+        };
+    };
+
+    // Prevent the default drag-and-drop behavior
+    overlay.ondragstart = function() {
+        return false;
+    };
 
         // Initialize the displayed year
         output.innerHTML = slider.value;
@@ -187,6 +274,14 @@
         variableSelect.onchange = function() {
             selectedVariable = this.value;
             sliderValue = 1996; // Reset the defined date
+            console.log('variable change: ', selectedVariable)
+            // Show or hide the precision button based on the selected variable
+            if (selectedVariable === 'var_altitude') {
+                console.log("inside if")
+                precisionButton.style.display = 'inline-block';
+            } else {
+                precisionButton.style.display = 'none';
+            }
             updateSliderRange();
             updateChart();
         }
@@ -197,6 +292,16 @@
             currentMode = currentMode === 'max' ? 'average' : 'max';
             modeButton.textContent = currentMode.charAt(0).toUpperCase() + currentMode.slice(1); // Update button text
             updateChart(); // Update the chart based on the new mode
+        }
+
+        // Event listener for the precision button
+        precisionButton.onclick = function() {
+            // Cycle through precision options: day, week, month, year
+            const precisionOptions = ['day', 'week', 'month', 'year'];
+            const currentIndex = precisionOptions.indexOf(currentPrecision);
+            currentPrecision = precisionOptions[(currentIndex + 1) % precisionOptions.length];
+            precisionButton.textContent = `Precision: ${currentPrecision.charAt(0).toUpperCase() + currentPrecision.slice(1)}`;
+            updateChart(); // Update the chart based on the new precision
         }
 
         /**
@@ -317,10 +422,28 @@
         function mapPreprocessedData(processedData, altitude) {
             const filteredData = processedData.filter(d => Math.abs(d.Altitude - altitude) <= 50);
 
+            let timeInterval;
+            switch (currentPrecision) {
+                case 'day':
+                    timeInterval = d3.timeDay;
+                    break;
+                case 'week':
+                    timeInterval = d3.timeWeek;
+                    break;
+                case 'month':
+                    timeInterval = d3.timeMonth;
+                    break;
+                case 'year':
+                    timeInterval = d3.timeYear;
+                    break;
+                default:
+                    timeInterval = d3.timeMonth;
+            }
+
             const monthlyData = d3.rollups(
             filteredData,
             v => currentMode === 'average' ? d3.mean(v, d => d.ht_neige) : d3.max(v, d => d.ht_neige),
-            d => d3.timeMonth(d.date)
+            d => timeInterval(d.date)
             ).map(([month, ht_neige]) => ({ month, ht_neige }));
 
             return monthlyData;
