@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Visualisations Nivologiques</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3-svg-legend@2.25.6/d3-legend.min.js"></script>
+
+</head>
+<body>
+    <header>
+        <h1>Visualisations Nivologiques</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Page principale</a></li>
+                <li><a href="visu1.html">Visualisation 1</a></li>
+                <li><a href="visu2.html">Visualisation 2</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="controls">
+            <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
+            <span id="selectedValue">2020</span>
+            <button id="modeButton" class="mode-button">Max</button>
+        </div>
+        <!-- Conteneur pour la hauteur de neige -->
+        <div id="snow-chart"></div>
+        <!-- Conteneur pour la température -->
+        <div id="temperature-chart"></div>
+    </main>
+    <script src="visu3.js" defer></script>
+</body>
+</html>

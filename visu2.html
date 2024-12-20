@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CSV to Stacked Area Chart</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>CSV to Stacked Area Chart</h1>
+        <nav>
+            <ul>
+                <li><a href="index.html">Page principale</a></li>
+                <li><a href="visu1.html">Visualisation 1</a></li>
+                <li><a href="visu3.html">Visualisation 3</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <div class="controls">
+            <label for="valueSlider">
+                <select id="variableSelect">
+                    <option value="var_year">Year</option>
+                    <option value="var_altitude">Altitude</option>
+                    <!-- Add more variables as needed -->
+                </select>
+            </label>
+            <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
+            <span id="selectedValue">2020</span>
+            <button id="modeButton" class="mode-button">Max</button>
+        </div>
+        <div id="bigmap"></div>
+    </main>
+    <script src="script.js" defer></script>
+</body>
+</html>
