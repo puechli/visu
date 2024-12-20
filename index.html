@@ -85,6 +85,7 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
+    <div class="tooltip" style="display: none;"></div>
     <div class="header">CSV to Stacked Area Chart</div>
     <div class="controls">
         <label for="valueSlider">
@@ -305,7 +306,8 @@
                 x: d.Longitude,
                 y: d.Latitude,
                 z: d.Altitude,
-                s: d.ht_neige
+                s: d.ht_neige,
+                n: d.Nom
             }));
 
             const alpes_points = points.filter(p => p.x > 5.0);
@@ -337,7 +339,7 @@
             alpes_border.forEach(p => alpes_points.push(p));
             pyren_border.forEach(p => pyren_points.push(p));
 
-            // Define x and y scales
+            // Define x and y scales and create scaled points
             const alpes_x = d3.scaleLinear()
                 .domain([d3.min(alpes_points, d => d.x), d3.max(alpes_points, d => d.x)])
                 .range([0, width]);
@@ -346,7 +348,6 @@
                 .domain([d3.min(alpes_points, d => d.y), d3.max(alpes_points, d => d.y)])
                 .range([height, 0]);
             
-            // Define x and y scales
             const pyren_x = d3.scaleLinear()
                 .domain([d3.min(pyren_points, d => d.x), d3.max(pyren_points, d => d.x)])
                 .range([0, width]);
@@ -354,6 +355,16 @@
             const pyren_y = d3.scaleLinear()
                 .domain([d3.min(pyren_points, d => d.y), d3.max(pyren_points, d => d.y)])
                 .range([height, 0]);
+            
+            const alpes_scaledpoints = alpes_points.map(d => ({
+                x: alpes_x(d.x), y: alpes_y(d.y),
+                z: d.z, s: d.s, n: d.n
+            }));
+            
+            const pyren_scaledpoints = pyren_points.map(d => ({
+                x: pyren_x(d.x), y: pyren_y(d.y),
+                z: d.z, s: d.s, n: d.n
+            }));
 
             // Create Voronoi Diagram
             const alpes_delaunay = d3.Delaunay.from(alpes_points, p => alpes_x(p.x), p => alpes_y(p.y));
@@ -397,80 +408,34 @@
                 .attr("style", "border: 2px solid black;")
                 .attr("transform", `translate(${margin.left},${margin.top})`);
 
-            // Function to find the gradient color for the Alpes
-            function createAlpesGradient(id, colors) {
-                const gradient = svgAlpes.append("defs")
-                    .append("linearGradient")
-                    .attr("id", id)
-                    .attr("x1", "0%")
-                    .attr("y1", "0%")
-                    .attr("x2", "100%")
-                    .attr("y2", "100%");
-
-                colors.forEach((color, index) => {
-                    gradient.append("stop")
-                        .attr("offset", `${(index / (colors.length - 1)) * 100}%`)
-                        .attr("style", `stop-color:${color};stop-opacity:1`);
-                });
-            }
-
-            // Function to find the gradient color for the Pyrennées
-            function createPyrenGradient(id, colors) {
-                const gradient = svgPyren.append("defs")
-                    .append("linearGradient")
-                    .attr("id", id)
-                    .attr("x1", "0%")
-                    .attr("y1", "0%")
-                    .attr("x2", "100%")
-                    .attr("y2", "100%");
-
-                    colors.forEach((color, index) => {
-                        gradient.append("stop")
-                            .attr("offset", `${(index / (colors.length - 1)) * 100}%`)
-                            .attr("style", `stop-color:${color};stop-opacity:1`);
-                    });
-            }
-
-            // Function to sort neighbors according to angle
-            function sortAlpesNeighbors(center, neighbors) {
-                return neighbors.sort((a, b) => {
-                    const angleA = Math.atan2(alpes_points[a].y - center.y, alpes_points[a].x - center.x);
-                    const angleB = Math.atan2(alpes_points[b].y - center.y, alpes_points[b].x - center.x);
-                    return angleA - angleB;
-                });
-            }
-
-            // Draw Voronoi diagram
+            // Draw Voronoi diagram for the Alpes
             svgAlpes.selectAll('path')
                 .data(alpes_voronoi.cellPolygons())
                 .join('path')
                 .attr("d", (d, i) => !d ? null : `M${d.join("L")}Z`)
-                .attr("fill", (d, i) => {
-                    if (!d) return null;
-                    const neighbors = alpes_delaunay.neighbors(i);
-                    const sortedNeighbors = sortAlpesNeighbors(alpes_points[i], neighbors);
-                    const colors = [interpolateColor(s_colorScale(alpes_points[i].s), s_colors)];
-                    sortedNeighbors.forEach(neighborIndex => {
-                        colors.push(interpolateColor(s_colorScale(alpes_points[neighborIndex].s), s_colors));
-                    });
-                    const gradientId = `gradient-${i}`;
-                    createAlpesGradient(gradientId, colors);
-                    return `url(#${gradientId})`;
-                    })
+                .attr("fill", (d, i) => d ? interpolateColor(s_colorScale(alpes_points[i].s), s_colors) : null)
                 .attr("class", "polygon");
             
-            // Draw points as rectangles
             svgAlpes.selectAll('circle')
-                .data(alpes_points)
+                .data(alpes_scaledpoints)
                 .enter()
                 .append('circle')
-                .attr('cx', p => alpes_x(p.x))
-                .attr('cy', p => alpes_y(p.y))
-                .attr('r', 2)
+                .attr('cx', p => p.x)
+                .attr('cy', p => p.y)
+                .attr('r', 3)
                 .attr('fill', 'black')
+                .on("mouseover", function(event, d) {
+                    const tooltip = d3.select(".tooltip");
+                    tooltip.style("display", "block")
+                        .html(`<strong>${d.n}</strong><br>Hauteur de neige: ${d.s} cm`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(".tooltip").style("display", "none");
+                })
                 .attr("class", "point");
             
-            // Draw the surrounding black border
             svgAlpes.append('rect')
                 .attr('x', 0)
                 .attr('y', 0)
@@ -480,7 +445,6 @@
                 .attr('stroke', 'black')
                 .attr('stroke-width', 1);
 
-            // Add title to the graph
             const alpes_title_margin = 30;
             const alpes_title = svgAlpes.append('text')
                 .attr('x', width / 2)
@@ -488,22 +452,47 @@
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '16px')
                 .attr('font-weight', 'bold')
-                .text('Région des Alpes');
+                .text('Voronoi de la région des Alpes');
             
             svgAlpes.attr('height', height + alpes_title_margin * 2);
             
-            // Draw the points as rectangle
-            svgPyren.selectAll('rect')
-                .data(data)
+            // Draw Voronoi diagram for the Pyrennées
+            svgPyren.selectAll('path')
+                .data(pyren_voronoi.cellPolygons())
+                .join('path')
+                .attr("d", (d, i) => !d ? null : `M${d.join("L")}Z`)
+                .attr("fill", (d, i) => d ? interpolateColor(s_colorScale(pyren_points[i].s), s_colors) : null)
+                .attr("class", "polygon");
+            
+            svgPyren.selectAll('circle')
+                .data(pyren_scaledpoints)
                 .enter()
-                .append('rect')
-                .attr('x', d => pyren_x(d.Longitude) - 20)
-                .attr('y', d => pyren_y(d.Latitude) - 20)
-                .attr('width', 20)
-                .attr('height', 20)
-                .attr('fill', d => interpolateColor(s_colorScale(d.Altitude + d.ht_neige), s_colors))
+                .append('circle')
+                .attr('cx', p => p.x)
+                .attr('cy', p => p.y)
+                .attr('r', 3)
+                .attr('fill', 'black')
+                .on("mouseover", function(event, d) {
+                    const tooltip = d3.select(".tooltip");
+                    tooltip.style("display", "block")
+                        .html(`<strong>${d.n}</strong><br>Hauteur de neige: ${d.s} cm`)
+                        .style("left", (event.pageX + 5) + "px")
+                        .style("top", (event.pageY - 28) + "px");
+                })
+                .on("mouseout", function() {
+                    d3.select(".tooltip").style("display", "none");
+                })
+                .attr("class", "point");
+            
+            svgPyren.append('rect')
+                .attr('x', 0)
+                .attr('y', 0)
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', 'none')
+                .attr('stroke', 'black')
+                .attr('stroke-width', 1);
 
-            // Add title to the graph
             const pyren_title_margin = 30;
             const pyren_title = svgPyren.append('text')
                 .attr('x', width / 2)
@@ -511,7 +500,9 @@
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '16px')
                 .attr('font-weight', 'bold')
-                .text('Région des Pyrennées');
+                .text('Voronoi de la région des Pyrennées');
+            
+            svgPyren.attr('height', height + pyren_title_margin * 2);
         }
 
         /**
@@ -522,7 +513,7 @@
             // Clear any existing chart elements
             d3.select("#chart").selectAll("*").remove();
 
-            // Define chart margins, width, and heightalpes_voronoi
+            // Define chart margins, width, and height
             const margin = { top: 20, right: 30, bottom: 30, left: 50 };
             const width = Math.max(928, window.innerWidth - 40) - margin.left - margin.right; // Responsive width
             const height = 500 - margin.top - margin.bottom;
