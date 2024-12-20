@@ -2,30 +2,33 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>CSV to Stacked Area Chart</title>
+    <title>Où est la neige?</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
     <header>
-        <h1>Affichage interactif des stations des Alpes et des Pyrénées et de leur hauteur de neige moyenne en février et mars</h1>
+        <h1>Visualisation en diagramme</h1>
         <nav>
             <ul>
-                <li><a href="index.html">Page principale</a></li>
-                <li><a href="visu1.html">Visualisation 1</a></li>
-                <li><a href="visu3.html">Visualisation 3</a></li>
+                <li><a href="index.html">Page de présentation</a></li>
+                <li><a href="visu1.html">Visualisation en courbes</a></li>
+                <li><a href="visu3.html">Visualisation en tableaux colorés</a></li>
             </ul>
         </nav>
     </header>
     <main>
         <div class="titleDiv">
-            <h3>Time Series Chart</h3>
-            <p>This chart shows the snow height over time for a selected station. Select a station from the dropdown above to view its time series data.</p>
+            <h3>Visualisation sur un diagramme de Voronoi représentatif des chaînes des Alpes et des Pyrennées</h3>
+            <p>Pour chacune des deux chaînes de montagnes, les stations sont affichés en point noir sur le diagramme de Voronoi, et chaque polygone du diagramme
+                a une couleur qui dépend de la hauteur de neige en l'année sélectionnée juste ci-dessous. Plus la région tend vers le gris clair, moins il y a eu
+                de neige; plus la région tend vers le bleu clair, plus il y a eu de neige.
+            </p>
         </div>
             <div class="tooltip" style="display: none;"></div>
             <div class="overlay" id="warningOverlay">
                 <span class="close-btn" onclick="hideOverlay()">x</span>
-                <p><strong>Warning:</strong> The data used in this visualization is limited to the months of February and March. Please exercise caution when interpreting the continuous date range displayed on the x-axis.</p>
+                <p><strong>N'ont pu être récupérées que les données des stations pour les mois de Février et Mars de chaque année</strong></p>
               </div>
               <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
                 ⚠️
@@ -34,15 +37,15 @@
               
             <div class="controls">
                 <!-- Dropdown for "Year"/"Altitude" -->
-                <label for="variableSelect">Select Variable:</label>
+                <label for="variableSelect">Variable en abscisse:</label>
                 <select id="variableSelect" class="mode-button">
-                    <option value="var_year">Year</option>
+                    <option value="var_year">Année</option>
                     <option value="var_altitude">Altitude</option>
                     <!-- Add more variables as needed -->
                 </select>
                 
                 <!-- Slider for value selection -->
-                <label for="valueSlider">Select Value:</label>
+                <label for="valueSlider">Donnée:</label>
                 <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
                 <span id="selectedValue">2020</span>
                 
@@ -50,17 +53,7 @@
                 <button id="modeButton" class="mode-button">Max</button>
         
                 <!-- Button for precision selection -->
-                <button id="precisionButton" class="mode-button" style="display:none;">Precision: Month</button>
-            </div>
-            <div class="controls">
-                <!-- Dropdown for Station Selection -->
-                <label for="stationSelect">Select Station:</label>
-                <select id="stationSelect" class="mode-button">
-                    <!-- Options will be populated dynamically -->
-                </select>
-            </div>
-            
-            <div id="timeSeriesChart">
+                <button id="precisionButton" class="mode-button" style="display:none;">Précision: Mois</button>
             </div>
             <div id="alpes"></div>
             <div id="pyren"></div>
@@ -68,5 +61,10 @@
             <script src="chart.js"></script>
     </main>
     <script src="script.js" defer></script>
+    <h2>Limites et perspectives de la visualisation du diagramme de Voronoi</h2>
+    <p>Son échelle de couleur dépend des hauteurs minimales et maximales de neige dans une même année.
+        Ainsi, en parcourant les années entre elles, on ne s'aperçoit pas des évolutions dans le temps,
+        on ne peut comparer que les stations entre elles dans une même année, ce qui enlève beaucoup de
+        pertinence au graphique dans le contexte de réchauffement climatique actuel.</p>
 </body>
 </html>

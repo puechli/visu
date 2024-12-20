@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>L'enneigement des stations de ski en France</title>
+    <title>Où est la neige?</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="warning.js"></script>
@@ -12,16 +12,16 @@
         <h1>L'enneigement des stations de ski en France</h1>
         <nav>
             <ul>
-                <li><a href="visu1.html">Visualisation 1</a></li>
-                <li><a href="visu2.html">Visualisation 2</a></li>
-                <li><a href="visu3.html">Visualisation 3</a></li>
+                <li><a href="visu1.html">Visualisation en courbes</a></li>
+                <li><a href="visu2.html">Visualisation en diagramme</a></li>
+                <li><a href="visu3.html">Visualisation en tableaux colorés</a></li>
             </ul>
         </nav>
     </header>
     <main>
         <div class="overlay" id="warningOverlay">
             <span class="close-btn" onclick="hideOverlay()">x</span>
-            <p><strong>Warning:</strong> The data used in this visualization is limited to the months of February and March. Please exercise caution when interpreting the continuous date range displayed on the x-axis.</p>
+            <p><strong>N'ont pu être récupérées que les données des stations pour les mois de Février et Mars de chaque année</strong></p>
           </div>
           <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
             ⚠️
@@ -34,15 +34,14 @@
         </section>
         <section class="introduction">
             <h4>Objectif : </h4>
-            <h5>Le but de ce travail était de réaliser plusieurs visualisations à partir d’un ou 
+            <h5>Le but de ce travail était de réaliser plusieurs visualisations à partir de 
                 plusieurs jeux de données. Nous avons décidé de réaliser des représentations de l’enneigement 
-                dans les alpes entre 1996 et 2024. Pour les deux premières visualisations, nous avons décidé d’étudier 
+                dans les alpes entre 1996 et 2024. Pour des raisons d'économie de temps et d'espace numérique, nous avons focalisé notre étude sur 
                 les deux mois de l’année où l’enneigement est maximal, c’est-à-dire les mois de février et de mars.  
-                Pour ce faire, nous avons regroupé tous les jeux de données de nivologie disponibles sur le site de météo 
+                Pour ce faire, nous avons regroupé tous les jeux de données de nivologie disponibles sur le site de Météo 
                 France pour ces deux mois en un seul et même fichier. </h5>
-            <h4>Source : </h4>
-            <h5>https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=94&id_rubrique=32</h5>
-
+            <br />
+            <h4>Source : <a href="https://donneespubliques.meteofrance.fr/?fond=produit&id_produit=94&id_rubrique=32">Météo France</h4>
         </section>
     </main>
 </body>
