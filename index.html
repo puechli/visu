@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Where Did The Snow Gow?</title>
+    <title>Where Did The Snow Go?</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -115,8 +115,8 @@
     <script src="https://d3js.org/d3.v6.min.js"></script>
 </head>
 <body>
-    <div class="header">Where Did The Snow Gow?</div>
-    
+    <div class="header">Where Did The Snow Go?</div>
+    <div class="tooltip" style="display: none;"></div>
     <div class="overlay" id="warningOverlay">
         <span class="close-btn" onclick="hideOverlay()">x</span>
         <p><strong>Warning:</strong> The data used in this visualization is limited to the months of February and March. Please exercise caution when interpreting the continuous date range displayed on the x-axis.</p>
@@ -164,6 +164,9 @@
     </div>
     <div id="timeSeriesChart">
     </div>
+    <div id="alpes"></div>
+    <div id="pyren"></div>
+    <script src="voronoi.js"></script>
     <script>
         // Global variables to store state and processed data
         let scaleNeige = 100;
@@ -659,7 +662,6 @@
         }
 
         // Load and process data from CSV files
-        let infoData, nivoData;
         let processedAltitudeData = {};
         variableSelect.value = 'var_year';
 
@@ -671,7 +673,7 @@
             nivoData = nivoDataSCV;
             preprocessData(infoData, nivoData);
             updateChart(); // Initial chart display
-
+            updateHeightmap();
             // Populate the station dropdown for the time series chart
             populateStationDropdown(infoData);
         }).catch(error => {
