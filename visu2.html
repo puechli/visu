@@ -19,10 +19,11 @@
     </header>
     <main>
         <div class="titleDiv">
-            <h3>Visualisation sur un diagramme de Voronoi représentatif des chaînes des Alpes et des Pyrennées</h3>
+            <h3>Visualisation sur un diagramme de Voronoi représentatif des chaînes des Alpes et des Pyrénées</h3>
             <p>Pour chacune des deux chaînes de montagnes, les stations sont affichés en point noir sur le diagramme de Voronoi, et chaque polygone du diagramme
                 a une couleur qui dépend de la hauteur de neige en l'année sélectionnée juste ci-dessous. Plus la région tend vers le gris clair, moins il y a eu
-                de neige; plus la région tend vers le bleu clair, plus il y a eu de neige.
+                de neige; plus la région tend vers le bleu clair, plus il y a eu de neige. La hauteur de la neige étant une donnée quantitative, l'échelle de couleur
+                évolue entre le minimum pour le gris clair et le maximum pour le bleu ciel. Les coordonnées sont des données GPS quantitatives de position.
             </p>
         </div>
             <div class="tooltip" style="display: none;"></div>
@@ -59,7 +60,18 @@
         <p>Son échelle de couleur dépend des hauteurs minimales et maximales de neige dans une même année.
             Ainsi, en parcourant les années entre elles, on ne s'aperçoit pas des évolutions dans le temps,
             on ne peut comparer que les stations entre elles dans une même année, ce qui enlève beaucoup de
-            pertinence au graphique dans le contexte de réchauffement climatique actuel.</p>
+            pertinence au graphique dans le contexte de réchauffement climatique actuel.
+            De plus, il aurait été souhaitable que le même nombre de station, chaque année, relève des informations
+            sur l'état de son climat car avoir un diagramme de Voronoi qui change selon l'année d'observation sélectionnée
+            est très perturbent.
+            Il a été tenté de remplir les régions du diagramme de Voronoi avec des dégradés de couleur qui auraient
+            comme centre les points des stations et qui s'harmoniseraient avec les régions voisines et leur dégradé de couleurs
+            pour dresser une carte presque en relief pour une visibilité plus agréable et satisfaisante. La méthode aurait été
+            de trianguler le diagramme de Voronoi obtenu via les fonctions Delaunay de D3.js. Chaque triangle obtenu aurait un
+            de ses sommets qui est une station et ses deux autres sommets constituant un bout de frontière avec une autre région.
+            Ainsi, il aurait été possible de trouver le bon dégradé de couleur triangulé pour afficher harmonieusement les
+            régions sur le diragramme de Voronoi des Alpes et des Pyrénées.
+        </p>
         <script src="warning.js"></script>
         <script src="chart.js"></script>
         <script src="voronoi.js"></script>

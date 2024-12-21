@@ -271,7 +271,7 @@ function createHeightmap(data) {
     
     svgAlpes.attr('height', height + alpes_title_margin * 2);
     
-    // Draw Voronoi diagram for the Pyrennées
+    // Draw Voronoi diagram for the Pyrénées
     svgPyren.selectAll('path')
         .data(pyren_voronoi.cellPolygons())
         .join('path')
@@ -315,7 +315,7 @@ function createHeightmap(data) {
         .attr('text-anchor', 'middle')
         .attr('font-size', '16px')
         .attr('font-weight', 'bold')
-        .text('Voronoi de la région des Pyrennées');
+        .text('Voronoi de la région des Pyrénées');
     
     svgPyren.attr('height', height + pyren_title_margin * 2);
 }
