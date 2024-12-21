@@ -319,7 +319,6 @@ function createStackedAreaChartYear(data) {
     // Add x-axis
     svg.append("g")
         .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x).ticks(data.length));
 
     // Add y-axis
     svg.append("g")
@@ -333,6 +332,16 @@ function createStackedAreaChartYear(data) {
         .attr("y1", y(0))
         .attr("y2", y(0))
         .attr("stroke", "black");
+
+    // Add y-axis label
+    svg.append("text")
+        .attr("x", -height / 2) // Center the label vertically
+        .attr("y", -margin.left + 20) // Position it to the left of the y-axis
+        .attr("transform", "rotate(-90)") // Rotate the label 90 degrees
+        .attr("text-anchor", "middle") // Center-align the text
+        .style("font-size", "12px") // Set font size
+        .style("font-weight", "bold") // Make it bold
+        .text("Altitude (m)"); // Label text
 }
 
 function calculateLinearRegression(data) {

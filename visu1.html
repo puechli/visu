@@ -30,7 +30,7 @@
         </div>
         <div class="controls">
             <!-- Dropdown for "Year"/"Altitude" -->
-            <label for="variableSelect">Paramètres en abscisse</label>
+            <label for="variableSelect">Paramètre à controler</label>
             <select id="variableSelect" class="mode-button">
                 <option value="var_year">Année</option>
                 <option value="var_altitude">Altitude</option>
@@ -38,11 +38,12 @@
             </select>
             
             <!-- Slider for value selection -->
-            <label for="valueSlider">Doonée:</label>
+            <label for="valueSlider">Valeur:</label>
             <input type="range" min="1996" max="2024" value="2020" class="slider" id="valueSlider">
             <span id="selectedValue">2020</span>
             
             <!-- Button for "Max"/"Average" -->
+            <label for="modeButton">Mode de données:</label>
             <button id="modeButton" class="mode-button">Max</button>
     
             <!-- Button for precision selection -->
