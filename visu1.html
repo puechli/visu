@@ -28,6 +28,10 @@
         <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
         ⚠️
         </div>
+        <div class="titleDiv">
+            <h3>Visualisation des données nivologiques temporelles</h3>
+            <p>Vous pouvez visualizer la hauteur du neige par rapport à l'hauteur et l'année du measure. Jouez avec les controles pour modifier le premier graph.</p>
+        </div>
         <div class="controls">
             <!-- Dropdown for "Year"/"Altitude" -->
             <label for="variableSelect">Paramètre à controler</label>
@@ -49,10 +53,10 @@
             <!-- Button for precision selection -->
             <button id="precisionButton" class="mode-button" style="display:none;">Précision: Mois</button>
         </div>
-        <div class="titleDiv">
-            <h3>Visualisation des données nivologiques temporelles</h3>
-        </div>
         <div id="chart">
+        </div>
+        <div class="titleDiv">
+            <p>Ensuite vous pouvez spécifier un station à examiner</p>
         </div>
         <div class="controls">
             <!-- Dropdown for Station Selection -->
@@ -62,6 +66,21 @@
             </select>
         </div>
         <div id="timeSeriesChart">
+        </div>
+        <div class="titleDiv">
+            <h4>Analyse du visualization</h4>
+            <p>Le graphique en courbes a toujours été la visualisation la plus populaire. Cela est dû à sa simplicité de création 
+                et d'interprétation. Le graphique en bas de cette page affiche la hauteur de la neige en fonction du temps. 
+                Cette visualisation aide à identifier les tendances et les rythmes de la couverture neigeuse. De plus, la ligne 
+                rouge indique une régression linéaire pour souligner la tendance au cours du temps. Les couleurs des courbes 
+                servent uniquement à les différencier visuellement. Le graphique en haut de la page est appelé 
+                "graphique en aires empilées", car il utilise une surface colorée pour représenter les données. Dans ces 
+                graphiques spécifiques, les couleurs correspondent aux couleurs des montagnes (marron) et de la neige (bleu 
+                pour la glace). L'affichage de plusieurs variables sur le même graphique est réalisé en les empilant les unes 
+                sur les autres. Cela permet de voir la contribution de chaque variable à l'ensemble. Notez que la hauteur de la 
+                neige est multipliée par 100 pour une meilleure visualisation. Cette visualisation propose une vue plus proche 
+                de l'imagination de la montagne.
+            </p>
         </div>
     </main>
 </body>

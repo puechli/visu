@@ -452,6 +452,26 @@ function createStackedAreaChartAltitude(monthlyData) {
         .attr("stroke-width", 2)
         .attr("fill", "none")
         .attr("class", "trend-line");
+
+    
+    // Add x-axis label
+    svg.append("text")
+        .attr("x", width / 2) // Center the label horizontally
+        .attr("y", height + margin.bottom - 5) // Position it below the x-axis
+        .attr("text-anchor", "middle") // Center-align the text
+        .style("font-size", "12px") // Set font size
+        .style("font-weight", "bold") // Make it bold
+        .text("Year"); // Label text
+
+    // Add y-axis label
+    svg.append("text")
+        .attr("x", -height / 2) // Center the label vertically
+        .attr("y", -margin.left + 20) // Position it to the left of the y-axis
+        .attr("transform", "rotate(-90)") // Rotate the label 90 degrees
+        .attr("text-anchor", "middle") // Center-align the text
+        .style("font-size", "12px") // Set font size
+        .style("font-weight", "bold") // Make it bold
+        .text("Snow Height (m)"); // Label text
 }
 
 // Load and process data from CSV files
@@ -558,7 +578,7 @@ function createTimeSeriesChart(stationData) {
     const svg = d3.select("#timeSeriesChart")
         .append("svg")
         .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
+        .attr("height", height + margin.top + 2*margin.bottom)
         .append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
@@ -638,4 +658,22 @@ function createTimeSeriesChart(stationData) {
         .attr("text-anchor", "middle")
         .style("font-size", "16px")
         .style("font-weight", "bold")
+
+    svg.append("text")
+        .attr("x", width / 2) // Center the label horizontally
+        .attr("y", height + 1.8*margin.bottom - 5) // Position it below the x-axis
+        .attr("text-anchor", "middle") // Center-align the text
+        .style("font-size", "12px") // Set font size
+        .style("font-weight", "bold") // Make it bold
+        .text("Date"); // Label text
+
+    // Add y-axis label
+    svg.append("text")
+        .attr("x", -height / 2) // Center the label vertically
+        .attr("y", -margin.left + 20) // Position it to the left of the y-axis
+        .attr("transform", "rotate(-90)") // Rotate the label 90 degrees
+        .attr("text-anchor", "middle") // Center-align the text
+        .style("font-size", "12px") // Set font size
+        .style("font-weight", "bold") // Make it bold
+        .text("Snow Height (m)"); // Label text
 }
