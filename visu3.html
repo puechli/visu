@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Visualisations Nivologiques</title>
+    <title>Températures moyennes et hauteurs de neige moyennes selon les stations et les années</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://d3js.org/d3.v6.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/d3-svg-legend@2.25.6/d3-legend.min.js"></script>
@@ -10,7 +10,7 @@
 </head>
 <body>
     <header>
-        <h1>Visualisations Nivologiques</h1>
+        <h1>Visualisation en tableaux colorés</h1>
         <nav>
             <ul>
                 <li><a href="index.html">Page principale</a></li>
@@ -21,9 +21,12 @@
     </header>
     <main>
         <!-- Conteneur pour la hauteur de neige -->
+        <h4>Représentation de la hauteur moyenne de neige en février et mars selon les stations de ski (triée de la plus haute en altitude à la moins haute) et les années :</h4>
         <div id="snow-chart"></div>
+        <h4>Représentation de la température moyenne en février et mars selon les stations de ski (triée de la plus haute en altitude à la moins haute) et les années :</h4>
         <!-- Conteneur pour la température -->
         <div id="temperature-chart"></div>
+        <h4>Représentation écrasée de ces deux graphes afin de pouvoir facilement faire le parallèle entre les températures moyennes et la hauteur de la neige selon les années :</h4>
         <div id="mini-snow-chart"></div>
         <div id="mini-temperature-chart"></div>
 
@@ -32,14 +35,30 @@
             <h5>Nous avons voulu étudier l’évolution de la hauteur de neige moyenne en février/mars ainsi que la température moyenne 
                 à cette période de l’année selon les années et les stations. 
                 Pour cela, nous avons pris tous les relevés de température et de hauteur de neige à notre disposition et nous avons 
-                fait une moyenne par annuelle selon les stations. Nous avons exclus les données manquante en leur attribuant des valeurs 
-                arbitraire (-1 pour la hauteur de neige et -273 pour la température). 
-                Ont été grisées les années où il n’y a pas de valeurs pour une station données. 
+                fait une moyenne annuelle selon les stations. Nous avons exclus les données manquantes en leur attribuant des valeurs 
+                arbitraires (-1 pour la hauteur de neige et -273 pour la température). 
+                Ont été grisées les années où il n’y a pas de valeurs pour une station données (donc quand les valeurs valeurs -1 pour la neige et -273 pour la température). 
                 Nous avons ensuite trié les stations selon leur altitude (de la plus haute à la plus basse) afin de mieux visualiser 
-                les potentielles tendances qui pourraient se déssiner et avoir une meilleure harmonie graphique (en partant du principe 
+                les potentielles tendances qui pourraient se dégager et avoir une meilleure harmonie graphique (en partant du principe 
                 que plus on est haut en altitude, plus il fera froid et il y aura de neige). Nous avons également pris la décision de garder 
                 toutes les stations mêmes celles qui n’ont pas ou très peu de données. Nous pensions qu’il pourrait être intéressant de voir 
-                si les données manquantes se situent plutot en haut altitude on en basse altitude.  </h5>
+                si les données manquantes se situent plutôt en haut altitude on en basse altitude.  </h5>
+                <br/>
+            <h4>Variables visuelles :</h4>
+                <h5><b>Température :</b> Variable quantitative de couleur dont la teinte varie du bleu au rouge selon la moyenne de la température (plus la température se
+                    rapproche de la moyenne maximale calculée, plus elle va tendre vers le rouge et inversement pour tendre vers le bleu, il faut que la valeur se rapproche de la 
+                    minimale calculée). </h5>
+                    <h5><b>Hauteure de neige :</b> La hauteur de neige est également une variable quantitative de couleur dont la teinte varie du bleu clair au bleu foncé selon la hauteur moyenne calculée de la neige.</h5>
+                <h5><b>Année :</b> Variable ordonnées de position représentée sur l'axe des abscisses. Plus on va vers la droite, plus les années augmentent.</h5>
+                <h5><b>Station de ski :</b> C'est une variable nominative de position. Chaque station de ski est représenté sur l'axe des ordonnées.</h5>
+                <h5><b>Altitude :</b> C'est également une variable de position qui est quantitative cette fois. Elle nous a servi dans cette représentation à trier les stations nivologiques 
+                de la plus élevée à la plus basse. </h5>
+            <br/>
+            <h4>Limites de la représentation :</h4>
+            <h5>Nos données s'étalant sur moins de 30 années, il est difficile de voir une énorme différence de température ou de hauteur de neige, surtout en haute altitude. 
+                Malgré tout, il est possible de voir une certaine tendance se dégager avec ces graphismes. De plus, pour la représentation de la hauteur de neige, il peut être 
+                difficile de bien voir les différence de hauteur de neige par le manque de contraste entre le bleu clair et le bleu foncé. 
+            </h5>
         </section>
     </main>
     <script src="visu3.js" defer></script>
