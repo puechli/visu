@@ -27,14 +27,12 @@
         </div>
             <div class="tooltip" style="display: none;"></div>
             <div class="overlay" id="warningOverlay">
-                <span class="close-btn" onclick="hideOverlay()">x</span>
-                <p><strong>N'ont pu être récupérées que les données des stations pour les mois de Février et Mars de chaque année</strong></p>
-              </div>
-              <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
-                ⚠️
-              </div>
-              
-              
+            <span class="close-btn" onclick="hideOverlay()">x</span>
+            <p><strong>N'ont pu être récupérées que les données des stations pour les mois de Février et Mars de chaque année</strong></p>
+            </div>
+            <div class="warning-sign" id="warningSign" onclick="showOverlay()" style="display:none;">
+            ⚠️
+            </div>
             <div class="controls">
                 <!-- Dropdown for "Year"/"Altitude" -->
                 <label for="variableSelect">Variable en abscisse:</label>
@@ -57,14 +55,14 @@
             </div>
             <div id="alpes"></div>
             <div id="pyren"></div>
-            <script src="voronoi.js"></script>
-            <script src="chart.js"></script>
+        <h2>Limites et perspectives de la visualisation du diagramme de Voronoi</h2>
+        <p>Son échelle de couleur dépend des hauteurs minimales et maximales de neige dans une même année.
+            Ainsi, en parcourant les années entre elles, on ne s'aperçoit pas des évolutions dans le temps,
+            on ne peut comparer que les stations entre elles dans une même année, ce qui enlève beaucoup de
+            pertinence au graphique dans le contexte de réchauffement climatique actuel.</p>
+        <script src="warning.js"></script>
+        <script src="chart.js"></script>
+        <script src="voronoi.js"></script>
     </main>
-    <script src="script.js" defer></script>
-    <h2>Limites et perspectives de la visualisation du diagramme de Voronoi</h2>
-    <p>Son échelle de couleur dépend des hauteurs minimales et maximales de neige dans une même année.
-        Ainsi, en parcourant les années entre elles, on ne s'aperçoit pas des évolutions dans le temps,
-        on ne peut comparer que les stations entre elles dans une même année, ce qui enlève beaucoup de
-        pertinence au graphique dans le contexte de réchauffement climatique actuel.</p>
 </body>
 </html>

@@ -1,5 +1,6 @@
 // Make the overlay draggable
 let overlay = document.getElementById('warningOverlay');
+
 function hideOverlay() {
     document.getElementById('warningOverlay').style.display = 'none';
     document.getElementById('warningSign').style.display = 'block';

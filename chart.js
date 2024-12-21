@@ -15,52 +15,6 @@ const output = document.getElementById('selectedValue');
 const modeButton = document.getElementById('modeButton');
 const precisionButton = document.getElementById('precisionButton');
 
-// Make the overlay draggable
-let overlay = document.getElementById('warningOverlay');
-function hideOverlay() {
-    document.getElementById('warningOverlay').style.display = 'none';
-    document.getElementById('warningSign').style.display = 'block';
-}
-
-function showOverlay() {
-    document.getElementById('warningOverlay').style.display = 'block';
-    document.getElementById('warningSign').style.display = 'none';
-}
-
-overlay.onmousedown = function(event) {
-    // Calculate the initial shift based on the mouse position relative to the overlay
-    let shiftX = event.clientX - overlay.getBoundingClientRect().left;
-    let shiftY = event.clientY - overlay.getBoundingClientRect().top;
-
-    // Adjust the initial position based on the current scroll position
-    moveAt(event.pageX - window.scrollX, event.pageY - window.scrollY);
-
-    function moveAt(pageX, pageY) {
-        // Update the overlay's position, taking into account the scroll position
-        overlay.style.left = pageX - shiftX + 'px';
-        overlay.style.top = pageY - shiftY + 'px';
-    }
-
-    function onMouseMove(event) {
-        // Adjust the mouse position by the current scroll position
-        moveAt(event.pageX - window.scrollX, event.pageY - window.scrollY);
-    }
-
-    // Attach the mousemove event listener
-    document.addEventListener('mousemove', onMouseMove);
-
-    // Remove the mousemove event listener when the mouse button is released
-    overlay.onmouseup = function() {
-        document.removeEventListener('mousemove', onMouseMove);
-        overlay.onmouseup = null;
-    };
-};
-
-// Prevent the default drag-and-drop behavior
-overlay.ondragstart = function() {
-    return false;
-};
-
 // Initialize the displayed year
 output.innerHTML = slider.value;
 
@@ -102,7 +56,6 @@ function updateSliderRange() {
         const upperBound = parseInt(sliderValue, 10) + 50;
         output.innerHTML = `${lowerBound} - ${upperBound}`;   
     }
-    
 }
 
 // Event listener for the variable dropdown
@@ -119,6 +72,7 @@ variableSelect.onchange = function() {
     }
     updateSliderRange();
     updateChart();
+    updateHeightmap();
 }
 
 // Event listener for the mode button
@@ -289,7 +243,6 @@ function mapPreprocessedData(processedData, altitude) {
  * @param {Array} data - Processed data for the chart.
  */
 function createStackedAreaChartYear(data) {
-    console.log('createStackedAreaChart Year');
     // Clear any existing chart elements
     d3.select("#chart").selectAll("*").remove();
 
@@ -504,8 +457,6 @@ Promise.all([
     nivoData = nivoDataSCV;
     preprocessData(infoData, nivoData);
     updateChart(); // Initial chart display
-    updateHeightmap();
-    // Populate the station dropdown for the time series chart
     populateStationDropdown(infoData);
 }).catch(error => {
     console.error("Error loading CSV files:", error);
@@ -548,7 +499,6 @@ document.getElementById('stationSelect').onchange = function() {
                 date: new Date(d.date.slice(0, 4), d.date.slice(4, 6) - 1, d.date.slice(6, 8), d.date.slice(8, 10), d.date.slice(10, 12)) // Convert date to Date object
             }));
 
-        console.log("Filtered stationData:", stationData); // Debug: Check the filtered data
         createTimeSeriesChart(stationData);
     }
 };
