@@ -1,6 +1,6 @@
 // Global variables to store state and processed data
 let scaleNeige = 100;
-let sliderValue = 1996;
+let sliderValue = 2020;
 let selectedVariable = 'var_year';
 let processedData = {};
 let processedNeigeDataMax = {};
