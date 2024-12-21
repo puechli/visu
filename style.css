@@ -55,10 +55,21 @@ nav ul li a {
     transition: all 0.3s ease-in-out;
     background: rgba(0, 0, 0, 0.4);
 }
+li {
+    justify-content: left;
+}
 
 nav ul li a:hover {
     background: rgba(255, 255, 255, 0.8);
     color: #34495e;
+}
+
+li, .introduction h5 {
+    font-family: 'Arial', sans-serif; /* Même police que dans le body */
+    font-size: 1em; /* Assurez une taille uniforme */
+    font-weight: normal; /* Ajustez si besoin */
+    color: #333; /* Harmonisez la couleur */
+    line-height: 1.6; /* Assurez une lisibilité similaire */
 }
 
 /* Section principale */
@@ -74,6 +85,7 @@ main {
 
 .introduction h4, .introduction h5 {
     margin: 0.5em 0;
+    text-align: center;
 }
 
 /* Footer */
